@@ -1,38 +1,171 @@
-// What We Found — category filter
+// What We Found — dynamic loader from GitHub + category filter
 
-const filterBtns = document.querySelectorAll('.filter-btn');
-const cards = document.querySelectorAll('.found-card');
-const emptyState = document.getElementById('foundEmpty');
+const REPO = "foundinjapan1/foundinjapan-site";
+const BRANCH = "main";
+const FOLDER = "_found";
+const API = `https://api.github.com/repos/${REPO}/contents/${FOLDER}?ref=${BRANCH}`;
 
-filterBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    // Update active button
-    filterBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+const grid = document.getElementById("foundGrid");
+const emptyState = document.getElementById("foundEmpty");
+const filterBtns = document.querySelectorAll(".filter-btn");
 
-    const filter = btn.dataset.filter;
-    let visible = 0;
+let allCards = [];
+let activeFilter = "all";
 
-    cards.forEach(card => {
-      const match = filter === 'all' || card.dataset.category === filter;
-      if (match) {
-        card.style.display = 'flex';
-        visible++;
-        // Stagger fade in
-        setTimeout(() => {
-          card.style.opacity = '1';
-          card.style.transform = 'translateY(0)';
-        }, 20);
-      } else {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(8px)';
-        setTimeout(() => { card.style.display = 'none'; }, 250);
+// Parse front matter from markdown
+function parseFrontMatter(text) {
+  const match = text.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) return {};
+  const data = {};
+  match[1].split("\n").forEach(line => {
+    const colonIdx = line.indexOf(":");
+    if (colonIdx === -1) return;
+    const key = line.slice(0, colonIdx).trim();
+    const val = line.slice(colonIdx + 1).trim().replace(/^["']|["']$/g, "");
+    data[key] = val;
+  });
+  return data;
+}
+
+// Parse photos list from front matter block
+function parsePhotos(text) {
+  const photos = [];
+  const match = text.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) return photos;
+  const lines = match[1].split("\n");
+  let inPhotos = false;
+  lines.forEach(line => {
+    if (line.trim() === "photos:") { inPhotos = true; return; }
+    if (inPhotos) {
+      if (line.match(/^[a-z]/i) && !line.startsWith(" ") && !line.startsWith("-")) {
+        inPhotos = false; return;
       }
-    });
-
-    // Show empty state if nothing matches
-    if (emptyState) {
-      emptyState.style.display = visible === 0 ? 'block' : 'none';
+      const photoMatch = line.match(/photo:\s*(.+)/);
+      if (photoMatch) photos.push(photoMatch[1].trim().replace(/^["']|["']$/g, ""));
     }
   });
+  return photos;
+}
+
+const CATEGORY_LABELS = {
+  "food-drink": "Food & Drink",
+  "shops-markets": "Shops & Markets",
+  "shrines-temples": "Shrines & Temples",
+  "events": "Events",
+  "places-sights": "Places & Sights"
+};
+
+function buildCard(data, photos) {
+  const category = data.category || "food-drink";
+  const label = CATEGORY_LABELS[category] || category;
+  const hasMultiple = photos.length > 1;
+
+  const imgHTML = photos.length > 0
+    ? photos.map((src, i) =>
+        `<img src="${src}" alt="${data.title || ""}" loading="lazy" class="carousel-img${i === 0 ? " active" : ""}" />`
+      ).join("")
+    : `<div style="height:200px;background:#e8e0d4;display:flex;align-items:center;justify-content:center;color:#999;font-size:0.85rem;">No photo</div>`;
+
+  const mapsLink = data.maps_url
+    ? `<a href="${data.maps_url}" target="_blank" class="found-link found-link-map"><span>◎</span> Google Maps</a>`
+    : "";
+  const videoLink = data.video_url
+    ? `<a href="${data.video_url}" target="_blank" class="found-link found-link-video"><span>▶</span> Watch Video</a>`
+    : "";
+
+  const card = document.createElement("div");
+  card.className = "found-card";
+  card.dataset.category = category;
+  card.innerHTML = `
+    <div class="found-card-img${hasMultiple ? " carousel" : ""}" data-index="0">
+      ${imgHTML}
+      <span class="found-card-tag">${label}</span>
+    </div>
+    <div class="found-card-body">
+      <div class="found-card-meta">
+        <span class="found-card-location">${data.location || ""}</span>
+        <span class="found-card-date">${data.date || ""}</span>
+      </div>
+      <h3 class="found-card-name">${data.title || "Untitled"}</h3>
+      <p class="found-card-note">${data.note || ""}</p>
+      <div class="found-card-links">${mapsLink}${videoLink}</div>
+    </div>
+  `;
+  return card;
+}
+
+function initCarousel(cardEl) {
+  const imgs = cardEl.querySelectorAll(".carousel-img");
+  if (imgs.length <= 1) return;
+  const wrap = cardEl.querySelector(".found-card-img");
+  let idx = 0;
+
+  const prev = document.createElement("button");
+  prev.className = "carousel-btn carousel-prev";
+  prev.innerHTML = "&#8249;";
+  const next = document.createElement("button");
+  next.className = "carousel-btn carousel-next";
+  next.innerHTML = "&#8250;";
+
+  const dots = document.createElement("div");
+  dots.className = "carousel-dots";
+  imgs.forEach((_, i) => {
+    const d = document.createElement("button");
+    d.className = "carousel-dot" + (i === 0 ? " active" : "");
+    d.addEventListener("click", () => goTo(i));
+    dots.appendChild(d);
+  });
+
+  wrap.appendChild(prev);
+  wrap.appendChild(next);
+  wrap.appendChild(dots);
+
+  function goTo(n) {
+    imgs[idx].classList.remove("active");
+    dots.children[idx].classList.remove("active");
+    idx = (n + imgs.length) % imgs.length;
+    imgs[idx].classList.add("active");
+    dots.children[idx].classList.add("active");
+  }
+
+  prev.addEventListener("click", () => goTo(idx - 1));
+  next.addEventListener("click", () => goTo(idx + 1));
+}
+
+function applyFilter(filter) {
+  activeFilter = filter;
+  let visible = 0;
+  allCards.forEach(card => {
+    const match = filter === "all" || card.dataset.category === filter;
+    if (match) {
+      card.style.display = "flex";
+      visible++;
+      setTimeout(() => {
+        card.style.opacity = "1";
+        card.style.transform = "translateY(0)";
+      }, 20);
+    } else {
+      card.style.opacity = "0";
+      card.style.transform = "translateY(8px)";
+      setTimeout(() => { card.style.display = "none"; }, 250);
+    }
+  });
+  if (emptyState) emptyState.style.display = visible === 0 ? "block" : "none";
+}
+
+filterBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    filterBtns.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    applyFilter(btn.dataset.filter);
+  });
 });
+
+// Load cards from GitHub
+async function loadFoundEntries() {
+  grid.innerHTML = `<p style="color:#999;font-size:0.9rem;padding:2rem 0;">Loading...</p>`;
+  try {
+    const res = await fetch(API);
+    if (!res.ok) throw new Error("Failed to fetch folder");
+    const files = await res.json();
+    const mdFiles = files
