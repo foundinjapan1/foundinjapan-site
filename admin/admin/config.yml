@@ -2,6 +2,8 @@ backend:
   name: github
   repo: foundinjapan1/foundinjapan-site
   branch: main
+  base_url: https://lucky-sea-1365.foundinjapanmail.workers.dev
+  auth_endpoint: /auth
 
 media_folder: "images"
 public_folder: "/images"
