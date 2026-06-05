@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What We Found — Found in Japan</title>
+  <meta name="description" content="Places, food, shops, shrines, and events found across Japan. Not a ranking — just what we came across." />
+  <meta name="keywords" content="Japan food, Osaka restaurants, Japan travel, things to do in Japan, Japan places, Osaka food" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* Carousel */
+    .found-card-img.carousel { position: relative; overflow: hidden; }
+    .found-card-img.carousel .carousel-img { position: absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; opacity:0; transition: opacity 0.4s ease; }
+    .found-card-img.carousel .carousel-img.active { opacity:1; position:relative; }
+    .found-card-img.carousel .carousel-img:not(.active) { position:absolute; }
+    .carousel-btn { position:absolute; top:50%; transform:translateY(-50%); background:rgba(28,20,16,0.55); color:#f5f0e8; border:none; width:28px; height:28px; font-size:0.85rem; cursor:pointer; z-index:10; display:flex; align-items:center; justify-content:center; transition:background 0.2s; }
+    .carousel-btn:hover { background:rgba(28,20,16,0.8); }
+    .carousel-prev { left:0.4rem; }
+    .carousel-next { right:0.4rem; }
+    .carousel-dots { position:absolute; bottom:0.5rem; left:50%; transform:translateX(-50%); display:flex; gap:0.3rem; z-index:10; }
+    .carousel-dot { width:6px; height:6px; border-radius:50%; background:rgba(245,240,232,0.5); border:none; cursor:pointer; padding:0; transition:background 0.2s; }
+    .carousel-dot.active { background:#f5f0e8; }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <img src="fij-logo.png" alt="Found in Japan" class="nav-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'"/>
+        <span class="nav-logo-text" style="display:none">Found in Japan</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="videos.html">Videos</a></li>
+        <li><a href="found.html" class="active">What We Found</a></li>
+        <li><a href="featured.html">Featured Items</a></li>
+        <li><a href="shop.html">Shop</a></li>
+        <li><a href="kanji.html">漢字</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="shoji-overlay"></div>
+    <div class="container">
+      <p class="hero-kicker">見つけたもの</p>
+      <h1 class="page-title">What We Found</h1>
+      <p class="page-hero-sub">Not a ranking. Not a guide. Just places, food, events and things we came across living in Japan.</p>
+    </div>
+    <div class="hero-wood-bar"></div>
+  </section>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="container">
+      <div class="filter-inner">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="food-drink">Food & Drink</button>
+        <button class="filter-btn" data-filter="shops-markets">Shops & Markets</button>
+        <button class="filter-btn" data-filter="shrines-temples">Shrines & Temples</button>
+        <button class="filter-btn" data-filter="events">Events</button>
+        <button class="filter-btn" data-filter="places-sights">Places & Sights</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cards Grid -->
+  <section class="section found-section">
+    <div class="container">
+      <div class="found-grid" id="foundGrid">
+
+        <!-- =============================================
+             CARD TEMPLATE — copy this block to add a new entry
+             
+             data-category options:
+               food-drink
+               shops-markets
+               shrines-temples
+               events
+               places-sights
+
+             To add a new card:
+             1. Copy from "CARD START" to "CARD END"
+             2. Paste before the closing </div> of found-grid
+             3. For ONE photo: use a single <img class="carousel-img active" src="photo.jpg" />
+             4. For MULTIPLE photos: add more <img class="carousel-img" src="photo2.jpg" /> lines
+                (first image gets class "carousel-img active", rest just "carousel-img")
+             5. Update: category, name, location, date, note
+             6. Update or remove maps-link and video-link as needed
+             7. Save and re-upload found.html to Cloudflare Pages
+        ============================================= -->
+
+        <!-- CARD START -->
+        <div class="found-card" data-category="food-drink">
+          <div class="found-card-img carousel" data-index="0">
+            <img src="sample-karaage.jpg" alt="Karaage teishoku set meal" loading="lazy" class="carousel-img active" />
+            <span class="found-card-tag">Food & Drink</span>
+          </div>
+          <div class="found-card-body">
+            <div class="found-card-meta">
+              <span class="found-card-location">Osaka</span>
+              <span class="found-card-date">2026</span>
+            </div>
+            <h3 class="found-card-name">Karaage Teishoku</h3>
+            <p class="found-card-note">A solid karaage set — fried chicken, shredded cabbage, miso soup, rice, and hiyayakko cold tofu on the side. The kind of lunch that reminds you why Japanese set meals are hard to beat for value and balance. Lemon on the side, as it should be.</p>
+            <div class="found-card-links">
+              <a href="https://maps.google.com" target="_blank" class="found-link found-link-map">
+                <span>◎</span> Google Maps
+              </a>
+              <!-- Uncomment and update if a video exists:
+              <a href="https://youtube.com/watch?v=VIDEOID" target="_blank" class="found-link found-link-video">
+                <span>▶</span> Watch Video
+              </a>
+              -->
+            </div>
+          </div>
+        </div>
+        <!-- CARD END -->
+
+      </div>
+
+      <!-- Empty state (shown when filter has no results) -->
+      <div class="found-empty" id="foundEmpty" style="display:none;">
+        <p>Nothing in this category yet — check back soon.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <p class="footer-copy">© 2026 Found in Japan · Osaka, Japan</p>
+        <a href="contact.html" class="footer-contact">contact@foundinjapan.co</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+  <script src="found.js"></script>
+  <script>
+    // Carousel init
+    function initCarousel(card) {
+      const imgs = card.querySelectorAll('.carousel-img');
+      if (imgs.length <= 1) return;
+      const wrap = card.querySelector('.found-card-img');
+      let idx = 0;
+
+      // Create controls
+      const prev = document.createElement('button');
+      prev.className = 'carousel-btn carousel-prev';
+      prev.innerHTML = '&#8249;';
+      const next = document.createElement('button');
+      next.className = 'carousel-btn carousel-next';
+      next.innerHTML = '&#8250;';
+
+      const dots = document.createElement('div');
+      dots.className = 'carousel-dots';
+      imgs.forEach((_, i) => {
+        const d = document.createElement('button');
+        d.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+        d.addEventListener('click', () => goTo(i));
+        dots.appendChild(d);
+      });
+
+      wrap.appendChild(prev);
+      wrap.appendChild(next);
+      wrap.appendChild(dots);
+
+      function goTo(n) {
+        imgs[idx].classList.remove('active');
+        dots.children[idx].classList.remove('active');
+        idx = (n + imgs.length) % imgs.length;
+        imgs[idx].classList.add('active');
+        dots.children[idx].classList.add('active');
+      }
+
+      prev.addEventListener('click', () => goTo(idx - 1));
+      next.addEventListener('click', () => goTo(idx + 1));
+    }
+
+    document.querySelectorAll('.found-card-img.carousel').forEach(card => initCarousel(card));
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Featured Items — Found in Japan</title>
+  <meta name="description" content="Items featured on the Found in Japan YouTube channel. Japanese rice cookers, chopsticks, and more." />
+  <meta name="keywords" content="Japanese rice cooker, chopsticks, Japan products, Found in Japan, Japanese kitchen" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    .affiliate-note {
+      background: var(--shoji-cream);
+      border-left: 3px solid var(--oak-mid);
+      padding: 0.85rem 1.25rem;
+      font-size: 0.78rem;
+      color: var(--ink-muted);
+      margin-bottom: 3rem;
+      line-height: 1.6;
+    }
+
+    .items-filter {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2.5rem;
+    }
+
+    /* Items grid */
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .item-card {
+      display: flex;
+      flex-direction: column;
+      background: var(--shoji-cream);
+      border: 1px solid var(--shoji-shadow);
+      box-shadow: 3px 3px 0 var(--shoji-shadow);
+      overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+    .item-card:hover {
+      box-shadow: 5px 5px 0 var(--oak-light);
+      transform: translateY(-2px);
+    }
+
+    .item-img-wrap {
+      aspect-ratio: 1/1;
+      background: var(--shoji-white);
+      border-bottom: 1px solid var(--shoji-shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .item-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.35s ease;
+    }
+
+    .item-card:hover .item-img-wrap img {
+      transform: scale(1.04);
+    }
+
+    /* Placeholder when no image -->*/
+    .item-img-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--shoji-white), var(--shoji-cream));
+    }
+
+    .item-img-placeholder span {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      color: var(--shoji-shadow);
+    }
+
+    .item-category-tag {
+      position: absolute;
+      top: 0.6rem;
+      left: 0.6rem;
+      background: var(--ink);
+      color: var(--shoji-white);
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+    }
+
+    .item-body {
+      padding: 1.1rem 1.25rem 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
+    }
+
+    .item-name {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.25;
+    }
+
+    .item-note {
+      font-size: 0.83rem;
+      color: var(--ink-muted);
+      line-height: 1.65;
+      flex: 1;
+    }
+
+    .item-links {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .item-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.4rem 0.85rem;
+      border: 1px solid;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .item-link-amazon {
+      background: #ff9900;
+      border-color: #ff9900;
+      color: #1c1410;
+      font-weight: 500;
+    }
+
+    .item-link-amazon:hover {
+      background: #e68a00;
+      border-color: #e68a00;
+    }
+
+    .item-link-video {
+      color: var(--ink-muted);
+      border-color: var(--shoji-shadow);
+    }
+
+    .item-link-video:hover {
+      color: var(--ink);
+      border-color: var(--ink-muted);
+      background: var(--shoji-white);
+    }
+
+    .items-empty {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--ink-muted);
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: 1.1rem;
+      display: none;
+    }
+
+    @media (max-width: 680px) {
+      .items-filter {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 0.25rem;
+      }
+      .items-filter::-webkit-scrollbar { display: none; }
+      .items-filter .filter-btn { white-space: nowrap; flex-shrink: 0; }
+      .items-grid { grid-template-columns: 1fr 1fr; gap: 1rem; }
+    }
+
+    @media (max-width: 420px) {
+      .items-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <img src="fij-logo.png" alt="Found in Japan" class="nav-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'"/>
+        <span class="nav-logo-text" style="display:none">Found in Japan</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="videos.html">Videos</a></li>
+        <li><a href="found.html">What We Found</a></li>
+        <li><a href="featured.html" class="active">Featured Items</a></li>
+        <li><a href="shop.html">Shop</a></li>
+        <li><a href="kanji.html">漢字</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="shoji-overlay"></div>
+    <div class="container">
+      <p class="hero-kicker">注目アイテム</p>
+      <h1 class="page-title">Featured Items</h1>
+      <p class="page-hero-sub">Things that have appeared on the channel. Links go to Amazon — I may earn a small commission at no cost to you.</p>
+    </div>
+    <div class="hero-wood-bar"></div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+
+      <div class="affiliate-note">
+        <strong>Affiliate disclosure:</strong> Some links on this page are Amazon affiliate links. If you purchase through them I may earn a small commission. It does not affect the price you pay and I only list things that have actually appeared on the channel.
+      </div>
+
+      <!-- Category filter -->
+      <div class="items-filter" id="itemsFilter">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="kitchen">Kitchen</button>
+        <button class="filter-btn" data-filter="food-drink">Food & Drink</button>
+        <button class="filter-btn" data-filter="tech">Tech</button>
+        <button class="filter-btn" data-filter="travel">Travel</button>
+        <button class="filter-btn" data-filter="other">Other</button>
+      </div>
+
+      <!-- Items grid -->
+      <div class="items-grid" id="itemsGrid">
+
+        <!-- =============================================
+             ITEM CARD TEMPLATE — copy to add new items
+
+             data-category options:
+               kitchen | food-drink | tech | travel | other
+
+             Steps to add a new item:
+             1. Copy from ITEM START to ITEM END
+             2. Paste before closing </div> of itemsGrid
+             3. Fill in: category, image src, item name, your note
+             4. Replace # in amazon-link href with your affiliate URL
+             5. Replace # in video-link href with YouTube video URL
+                (or remove the video link block if no video exists)
+             6. Save and re-upload featured.html to Cloudflare
+        ============================================= -->
+
+        <!-- ITEM START -->
+        <div class="item-card" data-category="kitchen">
+          <div class="item-img-wrap">
+            <div class="item-img-placeholder"><span>炊</span></div>
+            <span class="item-category-tag">Kitchen</span>
+          </div>
+          <div class="item-body">
+            <h3 class="item-name">Japanese Rice Cooker</h3>
+            <p class="item-note">A proper Japanese rice cooker makes a real difference. Covered this one in detail on the channel — how to use it for the first time, the settings, and why Japanese rice cooker technology is genuinely ahead of everywhere else.</p>
+            <div class="item-links">
+              <a href="#" target="_blank" class="item-link item-link-amazon">
+                ★ Amazon
+              </a>
+              <a href="https://www.youtube.com/watch?v=S4DHbtGI4Co" target="_blank" class="item-link item-link-video">
+                ▶ Watch Video
+              </a>
+            </div>
+          </div>
+        </div>
+        <!-- ITEM END -->
+
+        <!-- ITEM START -->
+        <div class="item-card" data-category="kitchen">
+          <div class="item-img-wrap">
+            <div class="item-img-placeholder"><span>箸</span></div>
+            <span class="item-category-tag">Kitchen</span>
+          </div>
+          <div class="item-body">
+            <h3 class="item-name">Japanese Chopsticks</h3>
+            <p class="item-note">Good chopsticks make a difference. Japanese chopsticks are tapered and pointed at the tip — different from Chinese or Korean styles. Covered the 7 types you'll actually see in Japan and how to use them properly on the channel.</p>
+            <div class="item-links">
+              <a href="#" target="_blank" class="item-link item-link-amazon">
+                ★ Amazon
+              </a>
+              <a href="https://www.youtube.com/watch?v=M0w537Ft77w" target="_blank" class="item-link item-link-video">
+                ▶ Watch Video
+              </a>
+            </div>
+          </div>
+        </div>
+        <!-- ITEM END -->
+
+      </div>
+
+      <div class="items-empty" id="itemsEmpty">Nothing in this category yet — check back soon.</div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <p class="footer-copy">© 2026 Found in Japan · Osaka, Japan</p>
+        <a href="contact.html" class="footer-contact">contact@foundinjapan.co</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+  <script>
+    // Filter logic for items
+    const filterBtns = document.querySelectorAll('#itemsFilter .filter-btn');
+    const cards = document.querySelectorAll('.item-card');
+    const empty = document.getElementById('itemsEmpty');
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filter = btn.dataset.filter;
+        let visible = 0;
+        cards.forEach(card => {
+          const match = filter === 'all' || card.dataset.category === filter;
+          card.style.display = match ? 'flex' : 'none';
+          if (match) visible++;
+        });
+        empty.style.display = visible === 0 ? 'block' : 'none';
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>漢字 Stroke Order — Found in Japan</title>
+  <meta name="description" content="Interactive kanji stroke order viewer. Enter any kanji to see animated stroke order using KanjiVG data." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=DM+Mono:wght@400;500&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Kanji tool specific styles — preserve original aesthetic ── */
+    :root {
+      --k-ink:    #1a1008;
+      --k-paper:  #f5f0e8;
+      --k-paper2: #ede7d9;
+      --k-accent: #c0392b;
+      --k-border: #cfc5b0;
+      --k-muted:  #8a7f70;
+    }
+
+    .kanji-page {
+      background: var(--k-paper);
+      position: relative;
+    }
+
+    /* Grid overlay on kanji section only */
+    .kanji-page::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(0,0,0,0.018) 28px, rgba(0,0,0,0.018) 29px),
+        repeating-linear-gradient(90deg, transparent, transparent 28px, rgba(0,0,0,0.012) 28px, rgba(0,0,0,0.012) 29px);
+      pointer-events: none; z-index: 0;
+    }
+
+    .kanji-wrap-outer {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    /* ── Search ── */
+    .k-search-row {
+      display: flex; gap: 10px; margin-bottom: 1.5rem;
+    }
+
+    .k-search-row input {
+      flex: 1;
+      font-family: 'Noto Serif JP', serif; font-size: 1.5rem;
+      padding: 10px 14px;
+      background: white;
+      border: 2px solid var(--k-border);
+      color: var(--k-ink);
+      outline: none;
+      transition: border-color 0.2s;
+      border-radius: 0;
+    }
+    .k-search-row input:focus { border-color: var(--k-accent); }
+    .k-search-row input::placeholder {
+      color: var(--k-muted); font-size: 0.85rem;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .k-search-row button {
+      font-family: 'DM Mono', monospace; font-size: 0.78rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 10px 22px;
+      background: var(--k-ink); color: var(--k-paper);
+      border: 2px solid var(--k-ink); cursor: pointer;
+      transition: background 0.15s;
+      border-radius: 0;
+    }
+    .k-search-row button:hover { background: var(--k-accent); border-color: var(--k-accent); }
+
+    /* ── Error ── */
+    #k-error {
+      display: none;
+      background: #fdecea; border: 1.5px solid var(--k-accent);
+      padding: 10px 14px; font-size: 0.78rem; color: var(--k-accent);
+      margin-bottom: 1rem; font-family: 'DM Mono', monospace;
+      line-height: 1.6;
+    }
+
+    /* ── Viewer ── */
+    .k-viewer {
+      display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap;
+    }
+
+    /* ── Kanji canvas ── */
+    .k-canvas-col {
+      flex-shrink: 0;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+    }
+
+    .k-display {
+      width: 300px; height: 300px;
+      background: white;
+      border: 2px solid var(--k-ink);
+      box-shadow: 5px 5px 0 var(--k-ink);
+      position: relative; overflow: hidden;
+    }
+
+    .k-display::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        linear-gradient(var(--k-border) 1px, transparent 1px) 0 0 / 100% 50%,
+        linear-gradient(90deg, var(--k-border) 1px, transparent 1px) 0 0 / 50% 100%;
+      pointer-events: none; z-index: 1; opacity: 0.5;
+    }
+
+    #k-svg-container {
+      width: 100%; height: 100%;
+      position: absolute; inset: 0; z-index: 2;
+    }
+    #k-svg-container svg { width: 100%; height: 100%; display: block; }
+    #k-svg-container [id*="StrokeNumbers"] { display: none; }
+
+    #k-badge-layer {
+      position: absolute; inset: 0; z-index: 5; pointer-events: none;
+    }
+
+    .k-stroke-badge {
+      position: absolute;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--k-accent); color: white;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.55rem; font-weight: 500;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none; opacity: 0;
+      transition: opacity 0.25s ease;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+      border: 1.5px solid white;
+    }
+
+    .k-progress-wrap {
+      width: 300px; height: 5px;
+      background: var(--k-paper2); border: 1px solid var(--k-border);
+    }
+    .k-progress-bar {
+      height: 100%; background: var(--k-accent);
+      transition: width 0.25s ease; width: 0%;
+    }
+
+    /* ── Controls ── */
+    .k-controls {
+      flex: 1; min-width: 260px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    .k-info-box {
+      background: var(--k-paper2); border: 1px solid var(--k-border);
+      padding: 14px 16px; line-height: 1.9;
+    }
+    .k-kanji-large {
+      font-family: 'Noto Serif JP', serif; font-size: 3rem;
+      line-height: 1.05; display: block; margin-bottom: 4px;
+    }
+    .k-info-row { font-size: 0.72rem; color: var(--k-muted); letter-spacing: 0.05em; font-family: 'DM Mono', monospace; }
+    .k-info-row span { color: var(--k-accent); font-weight: 500; }
+
+    .k-speed-row {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.7rem; color: var(--k-muted);
+      letter-spacing: 0.08em; text-transform: uppercase;
+      font-family: 'DM Mono', monospace;
+    }
+    .k-speed-row input[type=range] { flex: 1; accent-color: var(--k-accent); cursor: pointer; }
+
+    #k-variant-wrap { display: none; flex-direction: column; gap: 6px; }
+    #k-variant-wrap label { font-size: 0.7rem; color: var(--k-muted); letter-spacing: 0.1em; text-transform: uppercase; font-family: 'DM Mono', monospace; }
+    #k-variant-select {
+      font-family: 'DM Mono', monospace; font-size: 0.8rem;
+      padding: 6px 10px;
+      background: var(--k-paper2); border: 1.5px solid var(--k-border); color: var(--k-ink);
+      cursor: pointer; outline: none; border-radius: 0;
+    }
+    #k-variant-select:focus { border-color: var(--k-accent); }
+
+    .k-btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .k-btn {
+      font-family: 'DM Mono', monospace; font-size: 0.7rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 9px 15px;
+      background: var(--k-paper2); color: var(--k-ink);
+      border: 1.5px solid var(--k-border); cursor: pointer;
+      transition: all 0.12s; border-radius: 0;
+    }
+    .k-btn:hover:not(:disabled) { background: var(--k-ink); color: var(--k-paper); border-color: var(--k-ink); }
+    .k-btn:disabled { opacity: 0.35; cursor: default; }
+    .k-btn.primary { background: var(--k-ink); color: var(--k-paper); border-color: var(--k-ink); }
+    .k-btn.primary:hover:not(:disabled) { background: var(--k-accent); border-color: var(--k-accent); }
+    .k-btn.active { background: var(--k-accent); color: white; border-color: var(--k-accent); }
+
+    /* ── Stroke Grid ── */
+    .k-grid-section {
+      margin-top: 2.5rem; border-top: 2px solid var(--k-border);
+      padding-top: 1.75rem; display: none;
+    }
+    .k-grid-title {
+      font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--k-muted); margin-bottom: 14px; font-family: 'DM Mono', monospace;
+    }
+    .k-stroke-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+
+    .k-stroke-cell {
+      width: 90px; height: 90px;
+      background: white; border: 1.5px solid var(--k-border);
+      position: relative; overflow: hidden; cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .k-stroke-cell:hover { border-color: var(--k-accent); box-shadow: 2px 2px 0 var(--k-accent); }
+    .k-stroke-cell.active-cell { border-color: var(--k-accent); box-shadow: 2px 2px 0 var(--k-accent); }
+    .k-stroke-cell::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        linear-gradient(var(--k-border) 1px, transparent 1px) 0 0 / 100% 50%,
+        linear-gradient(90deg, var(--k-border) 1px, transparent 1px) 0 0 / 50% 100%;
+      opacity: 0.4; pointer-events: none; z-index: 1;
+    }
+    .k-stroke-cell svg { width: 100%; height: 100%; display: block; position: relative; z-index: 2; }
+    .k-stroke-cell .k-num {
+      position: absolute; bottom: 3px; right: 4px;
+      font-size: 0.6rem; color: var(--k-accent); font-weight: 500;
+      z-index: 3; background: rgba(255,255,255,0.8); padding: 1px 3px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* ── Attribution ── */
+    .k-attribution {
+      margin-top: 3rem;
+      border-top: 1px solid var(--k-border);
+      padding-top: 1.5rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--k-muted);
+      line-height: 1.9;
+    }
+
+    .k-attribution strong {
+      color: var(--k-ink);
+      display: block;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .k-attribution a {
+      color: var(--k-accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .k-attribution a:hover { color: var(--k-ink); }
+
+    .k-setup-note {
+      background: var(--k-paper2);
+      border: 1px solid var(--k-border);
+      border-left: 3px solid var(--k-accent);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--k-muted);
+      line-height: 1.8;
+      display: none;
+    }
+
+    .k-setup-note strong { color: var(--k-ink); }
+    .k-setup-note a { color: var(--k-accent); }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 680px) {
+      .k-display { width: 260px; height: 260px; }
+      .k-progress-wrap { width: 260px; }
+      .k-canvas-col { width: 100%; }
+      .kanji-wrap-outer { padding: 1.5rem 1rem 3rem; }
+    }
+  </style>
+</head>
+<body class="kanji-page">
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <img src="fij-logo.png" alt="Found in Japan" class="nav-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'"/>
+        <span class="nav-logo-text" style="display:none">Found in Japan</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="videos.html">Videos</a></li>
+        <li><a href="found.html">What We Found</a></li>
+        <li><a href="featured.html">Featured Items</a></li>
+        <li><a href="shop.html">Shop</a></li>
+        <li><a href="kanji.html" class="active">漢字</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <section class="page-hero">
+    <div class="shoji-overlay"></div>
+    <div class="container">
+      <p class="hero-kicker">筆順</p>
+      <h1 class="page-title">漢字 Stroke Order</h1>
+      <p class="page-hero-sub">Enter any kanji to see animated stroke order. Step through each stroke or watch them all play.</p>
+    </div>
+    <div class="hero-wood-bar"></div>
+  </section>
+
+  <div class="kanji-wrap-outer">
+
+    <!-- Setup note shown if kanji/ folder is missing -->
+    <div class="k-setup-note" id="k-setup-note">
+      <strong>Setup required</strong>
+      The KanjiVG data files are not yet installed. Download the SVG files from
+      <a href="https://github.com/KanjiVG/kanjivg/releases" target="_blank">github.com/KanjiVG/kanjivg/releases</a>
+      and place the extracted <code>kanji/</code> folder alongside this page on the server.
+      See the README for full instructions.
+    </div>
+
+    <div class="k-search-row">
+      <input type="text" id="k-search" placeholder="Enter kanji 馬  or hex  9f8a" maxlength="10"
+             onkeydown="if(event.key==='Enter') loadKanji()">
+      <button onclick="loadKanji()">Load →</button>
+    </div>
+
+    <div id="k-error"></div>
+
+    <div id="k-main-viewer" class="k-viewer hidden">
+
+      <div class="k-canvas-col">
+        <div class="k-display" id="k-display">
+          <div id="k-svg-container"></div>
+          <div id="k-badge-layer"></div>
+        </div>
+        <div class="k-progress-wrap"><div class="k-progress-bar" id="k-progress-bar"></div></div>
+      </div>
+
+      <div class="k-controls">
+        <div class="k-info-box">
+          <span class="k-kanji-large" id="k-kanji-label">—</span>
+          <div class="k-info-row">File: <span id="k-filename-label">—</span></div>
+          <div class="k-info-row">Unicode: <span id="k-unicode-label">—</span></div>
+          <div class="k-info-row">Stroke: <span id="k-stroke-current">0</span> / <span id="k-stroke-total">0</span></div>
+        </div>
+
+        <div class="k-btn-group">
+          <button class="k-btn" id="k-btn-prev" onclick="stepStroke(-1)" disabled>◀ Prev</button>
+          <button class="k-btn" id="k-btn-next" onclick="stepStroke(1)"  disabled>Next ▶</button>
+        </div>
+        <div class="k-btn-group">
+          <button class="k-btn primary" id="k-btn-play"   onclick="playAll()">▶ Play All</button>
+          <button class="k-btn"         id="k-btn-replay" onclick="replayAll()">↺ Replay</button>
+          <button class="k-btn"         id="k-btn-reset"  onclick="resetStrokes()">⊘ Reset</button>
+        </div>
+
+        <div class="k-speed-row">
+          <span>Speed</span>
+          <input type="range" id="k-speed-slider" min="200" max="2000" value="700" step="100">
+          <span id="k-speed-label">0.7s</span>
+        </div>
+
+        <div id="k-variant-wrap">
+          <label>Variant / Style</label>
+          <select id="k-variant-select" onchange="loadVariant(this.value)"></select>
+        </div>
+
+        <div class="k-btn-group">
+          <button class="k-btn" onclick="toggleGrid()">⊞ Stroke Grid</button>
+          <button class="k-btn" onclick="openInNewTab()">↗ Open SVG</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="k-grid-section" id="k-grid-section">
+      <div class="k-grid-title">Stroke-by-stroke · click a cell to jump to that stroke</div>
+      <div class="k-stroke-grid" id="k-stroke-grid"></div>
+      <p style="font-size:0.72rem;color:var(--k-muted);margin-top:12px;line-height:1.7;font-family:'DM Mono',monospace;">
+        Gray = previous strokes · Red = current stroke · Invisible = not yet drawn
+      </p>
+    </div>
+
+    <!-- Attribution / Citation -->
+    <div class="k-attribution">
+      <strong>Data Source &amp; Attribution</strong>
+      Stroke order data provided by <a href="https://kanjivg.tagaini.net" target="_blank">KanjiVG</a>,
+      created by Ulrich Apel and contributors.<br>
+      KanjiVG is licensed under the
+      <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank">Creative Commons Attribution-Share Alike 3.0</a> license.<br>
+      Source files and full dataset available at
+      <a href="https://github.com/KanjiVG/kanjivg" target="_blank">github.com/KanjiVG/kanjivg</a>.<br><br>
+      This viewer is part of Found in Japan and is provided for educational purposes.
+      No modification has been made to the KanjiVG SVG data.
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <p class="footer-copy">© 2026 Found in Japan · Osaka, Japan</p>
+        <a href="contact.html" class="footer-contact">contact@foundinjapan.co</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+  <script>
+    // ─── State ───────────────────────────────────────────────────────────────
+    let allPaths    = [];
+    let currentStep = -1;
+    let isPlaying   = false;
+    let playTimer   = null;
+    let currentFile = '';
+    let currentHex  = '';
+    let currentChar = '';
+    let gridBuilt   = false;
+
+    const PAST_COLORS = ['#d4c8b8','#c4b8a4','#b4a890','#a09078','#8a7860','#706050','#504030','#302010'];
+
+    document.getElementById('k-speed-slider').addEventListener('input', function() {
+      document.getElementById('k-speed-label').textContent = (this.value / 1000).toFixed(1) + 's';
+    });
+
+    function getSpeed() { return parseInt(document.getElementById('k-speed-slider').value); }
+
+    function charToHex(ch) { return ch.codePointAt(0).toString(16).padStart(5,'0'); }
+
+    function loadKanji() {
+      const input = document.getElementById('k-search').value.trim();
+      if (!input) return;
+      let hex;
+      if ([...input].length === 1) {
+        currentChar = input;
+        hex = charToHex(input);
+      } else {
+        hex = input.toLowerCase().padStart(5,'0');
+        try { currentChar = String.fromCodePoint(parseInt(hex,16)); } catch(e) { currentChar = ''; }
+      }
+      currentHex  = hex;
+      currentFile = hex + '.svg';
+      fetchAndRender(currentFile);
+      populateVariants(hex);
+    }
+
+    function loadVariant(filename) {
+      currentFile = filename;
+      fetchAndRender(filename);
+      gridBuilt = false;
+      document.getElementById('k-grid-section').style.display = 'none';
+    }
+
+    async function fetchAndRender(filename) {
+      hideError();
+      stopPlay();
+      try {
+        const resp = await fetch('kanji/' + filename);
+        if (!resp.ok) throw new Error('Kanji not found: ' + filename);
+        const svgText = await resp.text();
+        buildAnimatedSVG(svgText, filename);
+      } catch(e) {
+        // Check if it's a network/CORS error vs not found
+        if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+          showError('Could not load kanji data. Make sure the kanji/ folder has been uploaded to the server.');
+          document.getElementById('k-setup-note').style.display = 'block';
+        } else {
+          showError(e.message);
+        }
+      }
+    }
+
+    function buildAnimatedSVG(svgText, filename) {
+      const parser  = new DOMParser();
+      const doc     = parser.parseFromString(svgText, 'image/svg+xml');
+      const origSvg = doc.querySelector('svg');
+      if (!origSvg) { showError('Could not parse SVG.'); return; }
+
+      const container = document.getElementById('k-svg-container');
+      container.innerHTML = '';
+      const svg = document.importNode(origSvg, true);
+      svg.setAttribute('width','100%');
+      svg.setAttribute('height','100%');
+      container.appendChild(svg);
+
+      let strokeEls = Array.from(svg.querySelectorAll('[id*="StrokePaths"] path'));
+      if (strokeEls.length === 0) strokeEls = Array.from(svg.querySelectorAll('path'));
+
+      allPaths = strokeEls.map(el => {
+        const len = el.getTotalLength ? el.getTotalLength() : 200;
+        const origStroke = el.getAttribute('stroke') || '#000';
+        let startPt = {x: 50, y: 50};
+        try { const p = el.getPointAtLength(0); startPt = {x: p.x, y: p.y}; } catch(e) {}
+        return { el, length: len, origStroke, startPt };
+      });
+
+      document.getElementById('k-badge-layer').innerHTML = '';
+
+      allPaths.forEach(({el, length}) => {
+        el.style.strokeDasharray  = length;
+        el.style.strokeDashoffset = length;
+        el.style.fill = 'none';
+        el.style.transition = 'none';
+      });
+
+      currentStep = -1;
+      gridBuilt   = false;
+
+      document.getElementById('k-kanji-label').textContent   = currentChar || ('U+' + currentHex.toUpperCase());
+      document.getElementById('k-filename-label').textContent = filename;
+      document.getElementById('k-unicode-label').textContent  = 'U+' + currentHex.toUpperCase();
+      document.getElementById('k-stroke-total').textContent   = allPaths.length;
+      document.getElementById('k-stroke-current').textContent = 0;
+      document.getElementById('k-progress-bar').style.width   = '0%';
+
+      document.getElementById('k-main-viewer').classList.remove('hidden');
+      document.getElementById('k-btn-prev').disabled = true;
+      document.getElementById('k-btn-next').disabled = false;
+
+      if (document.getElementById('k-grid-section').style.display !== 'none') buildGrid();
+    }
+
+    function drawStroke(index, speed) {
+      const {el, length, startPt} = allPaths[index];
+      const spd = speed ?? getSpeed();
+      const t     = allPaths.length > 1 ? index / (allPaths.length - 1) : 1;
+      const r     = Math.round(180 - t * 162);
+      const g     = Math.round(140 - t * 124);
+      const b     = Math.round(100 - t * 92);
+      const color = `rgb(${r},${g},${b})`;
+      el.setAttribute('stroke', color);
+      el.style.strokeDasharray  = length;
+      el.style.strokeDashoffset = length;
+      el.style.transition = 'none';
+      void el.getBoundingClientRect();
+      el.style.transition = `stroke-dashoffset ${spd}ms ease-in-out`;
+      el.style.strokeDashoffset = '0';
+      showBadge(index, startPt, spd);
+    }
+
+    function showBadge(index, startPt, spd) {
+      const layer = document.getElementById('k-badge-layer');
+      const svg   = document.querySelector('#k-svg-container svg');
+      if (!svg) return;
+      const vb   = svg.viewBox.baseVal;
+      const vbW  = vb.width  || 109;
+      const vbH  = vb.height || 109;
+      const boxW = 300;
+      const boxH = 300;
+      const pxX  = (startPt.x / vbW) * boxW;
+      const pxY  = (startPt.y / vbH) * boxH;
+      let badge = document.getElementById('k-badge-' + index);
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'k-stroke-badge';
+        badge.id = 'k-badge-' + index;
+        badge.textContent = index + 1;
+        layer.appendChild(badge);
+      }
+      badge.style.left = pxX + 'px';
+      badge.style.top  = pxY + 'px';
+      badge.style.opacity = '0';
+      badge.style.transition = 'none';
+      setTimeout(() => {
+        badge.style.transition = 'opacity 0.3s ease';
+        badge.style.opacity    = '1';
+        setTimeout(() => {
+          badge.style.transition = 'opacity 0.6s ease';
+          badge.style.opacity    = '0';
+        }, spd + 600);
+      }, Math.min(spd * 0.3, 200));
+    }
+
+    function hideStroke(index) {
+      const {el, length} = allPaths[index];
+      el.style.transition = 'none';
+      el.style.strokeDashoffset = length;
+      el.setAttribute('stroke', el.origStroke || '#000');
+    }
+
+    function setPastColor(index) {
+      const {el} = allPaths[index];
+      el.style.transition = 'none';
+      el.style.strokeDashoffset = '0';
+      const shade = PAST_COLORS[Math.min(index, PAST_COLORS.length - 1)];
+      el.setAttribute('stroke', shade);
+    }
+
+    function updateUI() {
+      const drawn = currentStep + 1;
+      const total = allPaths.length;
+      document.getElementById('k-stroke-current').textContent = drawn;
+      document.getElementById('k-progress-bar').style.width   = (total ? (drawn / total * 100) : 0) + '%';
+      document.getElementById('k-btn-prev').disabled = currentStep < 0;
+      document.getElementById('k-btn-next').disabled = currentStep >= total - 1;
+      highlightGridCell(currentStep);
+    }
+
+    function stepStroke(dir) {
+      stopPlay();
+      if (dir > 0) {
+        if (currentStep >= allPaths.length - 1) return;
+        if (currentStep >= 0) setPastColor(currentStep);
+        currentStep++;
+        drawStroke(currentStep);
+      } else {
+        if (currentStep < 0) return;
+        hideStroke(currentStep);
+        currentStep--;
+        if (currentStep >= 0) drawStroke(currentStep, 0);
+      }
+      updateUI();
+    }
+
+    function playAll() {
+      if (isPlaying) { stopPlay(); return; }
+      if (currentStep >= allPaths.length - 1) { resetStrokes(); }
+      isPlaying = true;
+      document.getElementById('k-btn-play').textContent = '⏸ Pause';
+      document.getElementById('k-btn-play').classList.add('active');
+      playNext();
+    }
+
+    function playNext() {
+      if (!isPlaying || currentStep >= allPaths.length - 1) { stopPlay(); return; }
+      if (currentStep >= 0) setPastColor(currentStep);
+      currentStep++;
+      drawStroke(currentStep);
+      updateUI();
+      playTimer = setTimeout(playNext, getSpeed() + 80);
+    }
+
+    function stopPlay() {
+      isPlaying = false;
+      clearTimeout(playTimer);
+      document.getElementById('k-btn-play').textContent = '▶ Play All';
+      document.getElementById('k-btn-play').classList.remove('active');
+    }
+
+    function replayAll() { stopPlay(); resetStrokes(); setTimeout(playAll, 120); }
+
+    function resetStrokes() {
+      stopPlay();
+      allPaths.forEach(({el, length}) => {
+        el.style.transition       = 'none';
+        el.style.strokeDashoffset = length;
+      });
+      document.getElementById('k-badge-layer').innerHTML = '';
+      currentStep = -1;
+      updateUI();
+    }
+
+    function toggleGrid() {
+      const sec = document.getElementById('k-grid-section');
+      if (sec.style.display === 'none' || sec.style.display === '') {
+        sec.style.display = 'block';
+        if (!gridBuilt) buildGrid();
+        sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        sec.style.display = 'none';
+      }
+    }
+
+    function buildGrid() {
+      const grid = document.getElementById('k-stroke-grid');
+      grid.innerHTML = '';
+      if (allPaths.length === 0) return;
+      const svgEl = document.querySelector('#k-svg-container svg');
+      if (!svgEl) return;
+      const vb = svgEl.getAttribute('viewBox') || '0 0 109 109';
+      let strokeEls = Array.from(svgEl.querySelectorAll('[id*="StrokePaths"] path'));
+      if (strokeEls.length === 0) strokeEls = Array.from(svgEl.querySelectorAll('path'));
+      strokeEls.forEach((path, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'k-stroke-cell';
+        cell.id = 'k-grid-cell-' + i;
+        cell.onclick = () => jumpToStroke(i);
+        const miniSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        miniSvg.setAttribute('viewBox', vb);
+        strokeEls.forEach((p, j) => {
+          const el = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          el.setAttribute('d', p.getAttribute('d') || '');
+          el.setAttribute('fill', 'none');
+          el.setAttribute('stroke-linecap', 'round');
+          el.setAttribute('stroke-linejoin', 'round');
+          if (j < i)       { el.setAttribute('stroke', '#c8bfb0'); el.setAttribute('stroke-width', '3.5'); }
+          else if (j === i) { el.setAttribute('stroke', '#c0392b'); el.setAttribute('stroke-width', '4.5'); }
+          else              { el.setAttribute('stroke', 'none'); }
+          miniSvg.appendChild(el);
+        });
+        const num = document.createElement('div');
+        num.className = 'k-num';
+        num.textContent = i + 1;
+        cell.appendChild(miniSvg);
+        cell.appendChild(num);
+        grid.appendChild(cell);
+      });
+      gridBuilt = true;
+      highlightGridCell(currentStep);
+    }
+
+    function highlightGridCell(index) {
+      document.querySelectorAll('.k-stroke-cell').forEach((c, i) => {
+        c.classList.toggle('active-cell', i === index);
+      });
+    }
+
+    function jumpToStroke(index) {
+      stopPlay();
+      allPaths.forEach(({el, length}) => { el.style.transition = 'none'; el.style.strokeDashoffset = length; });
+      for (let i = 0; i < index; i++) { allPaths[i].el.style.strokeDashoffset = '0'; setPastColor(i); }
+      currentStep = index - 1;
+      drawStroke(index, 0);
+      void allPaths[index].el.getBoundingClientRect();
+      allPaths[index].el.style.strokeDashoffset = '0';
+      currentStep = index;
+      updateUI();
+    }
+
+    function populateVariants(hex) {
+      const suffixes = ['', '-Kaisho', '-HzFst', '-VtLst', '-MidFst', '-Insatsu'];
+      const sel = document.getElementById('k-variant-select');
+      sel.innerHTML = '';
+      suffixes.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = hex + s + '.svg';
+        opt.textContent = hex + s + '.svg';
+        if (s === '') opt.selected = true;
+        sel.appendChild(opt);
+      });
+      document.getElementById('k-variant-wrap').style.display = 'flex';
+    }
+
+    function openInNewTab() { if (currentFile) window.open('kanji/' + currentFile, '_blank'); }
+
+    function showError(msg) {
+      const el = document.getElementById('k-error');
+      el.innerHTML = '✗ ' + msg;
+      el.style.display = 'block';
+    }
+
+    function hideError() {
+      document.getElementById('k-error').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shop — Found in Japan</title>
+  <meta name="description" content="The Found in Japan shop is under construction. Coming soon — apparel and goods." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* Shop page specific */
+    .shop-hero {
+      min-height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-top: var(--nav-h);
+      background: linear-gradient(160deg, var(--shoji-cream) 0%, var(--shoji-white) 100%);
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .shop-hero-inner {
+      position: relative;
+      z-index: 2;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .shop-illustration {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      filter: drop-shadow(4px 6px 0px rgba(122,92,58,0.18));
+    }
+
+    .shop-kicker {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: 1rem;
+      color: var(--fij-orange);
+      letter-spacing: 0.15em;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.1s forwards;
+    }
+
+    .shop-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: var(--ink);
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.25s forwards;
+    }
+
+    .shop-sub {
+      font-size: 1rem;
+      color: var(--ink-muted);
+      line-height: 1.75;
+      max-width: 480px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.4s forwards;
+    }
+
+    .shop-coming {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      border: 1px solid var(--shoji-shadow);
+      padding: 0.6rem 1.5rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.55s forwards;
+    }
+
+    .shop-coming::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--fij-orange);
+      animation: pulse 2s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .shop-preview {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      border: 1px solid var(--shoji-shadow);
+      padding: 1.5rem 2rem;
+      background: var(--shoji-cream);
+      text-align: left;
+      max-width: 400px;
+      width: 100%;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.7s forwards;
+    }
+
+    .shop-preview-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--fij-orange);
+    }
+
+    .shop-preview-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.88rem;
+      color: var(--ink-muted);
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--shoji-shadow);
+    }
+
+    .shop-preview-item:last-child { border-bottom: none; }
+
+    .shop-preview-item::before {
+      content: '―';
+      color: var(--oak-mid);
+      flex-shrink: 0;
+    }
+
+    .shop-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.85s forwards;
+    }
+
+    @media (max-width: 480px) {
+      .shop-actions { flex-direction: column; width: 100%; }
+      .shop-actions .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <img src="fij-logo.png" alt="Found in Japan" class="nav-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'"/>
+        <span class="nav-logo-text" style="display:none">Found in Japan</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="videos.html">Videos</a></li>
+        <li><a href="found.html">What We Found</a></li>
+        <li><a href="featured.html">Featured Items</a></li>
+        <li><a href="shop.html" class="active">Shop</a></li>
+        <li><a href="kanji.html">漢字</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <button class="nav-toggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <section class="shop-hero">
+    <div class="shoji-overlay"></div>
+
+    <!-- Ukiyo-e style construction illustration -->
+    <div class="shop-hero-inner">
+
+      <svg class="shop-illustration" viewBox="0 0 520 320" xmlns="http://www.w3.org/2000/svg" aria-label="Shop under construction illustration in ukiyo-e style">
+        <!-- Sky background -->
+        <rect width="520" height="320" fill="#d4e8f0"/>
+        <!-- Woodblock hatching sky -->
+        <line x1="0" y1="20" x2="520" y2="20" stroke="#b8d4e4" stroke-width="0.5" opacity="0.6"/>
+        <line x1="0" y1="40" x2="520" y2="40" stroke="#b8d4e4" stroke-width="0.5" opacity="0.6"/>
+        <line x1="0" y1="60" x2="520" y2="60" stroke="#b8d4e4" stroke-width="0.5" opacity="0.6"/>
+        <line x1="0" y1="80" x2="520" y2="80" stroke="#b8d4e4" stroke-width="0.5" opacity="0.6"/>
+
+        <!-- Ground -->
+        <rect x="0" y="270" width="520" height="50" fill="#c8a97a"/>
+        <line x1="0" y1="270" x2="520" y2="270" stroke="#7a5c3a" stroke-width="2"/>
+
+        <!-- Scaffolding structure — vertical posts -->
+        <rect x="60"  y="80" width="8" height="190" fill="#7a5c3a"/>
+        <rect x="160" y="60" width="8" height="210" fill="#7a5c3a"/>
+        <rect x="260" y="80" width="8" height="190" fill="#7a5c3a"/>
+        <rect x="360" y="60" width="8" height="210" fill="#7a5c3a"/>
+        <rect x="455" y="80" width="8" height="190" fill="#7a5c3a"/>
+
+        <!-- Scaffolding — horizontal beams -->
+        <rect x="55"  y="90"  width="410" height="7" fill="#a8845a"/>
+        <rect x="55"  y="145" width="410" height="7" fill="#a8845a"/>
+        <rect x="55"  y="200" width="410" height="7" fill="#a8845a"/>
+        <rect x="55"  y="252" width="410" height="7" fill="#a8845a"/>
+
+        <!-- Diagonal braces -->
+        <line x1="64" y1="97"  x2="164" y2="145" stroke="#7a5c3a" stroke-width="5" stroke-linecap="round"/>
+        <line x1="164" y1="97" x2="64"  y2="145" stroke="#7a5c3a" stroke-width="5" stroke-linecap="round"/>
+        <line x1="264" y1="97" x2="364" y2="145" stroke="#7a5c3a" stroke-width="5" stroke-linecap="round"/>
+        <line x1="364" y1="97" x2="264" y2="145" stroke="#7a5c3a" stroke-width="5" stroke-linecap="round"/>
+        <line x1="164" y1="152" x2="264" y2="200" stroke="#7a5c3a" stroke-width="5" stroke-linecap="round"/>
+        <line x1="264" y1="152" x2="164" y2="200" stroke="#7a5c3a" stroke-width="5" stroke-linecap="round"/>
+        <line x1="364" y1="152" x2="460" y2="200" stroke="#7a5c3a" stroke-width="5" stroke-linecap="round"/>
+
+        <!-- Worker 1 — on upper beam left, active pose -->
+        <g transform="translate(95, 88)">
+          <!-- Body -->
+          <rect x="-8" y="0" width="16" height="22" rx="2" fill="#1c3a5c"/>
+          <!-- Head -->
+          <ellipse cx="0" cy="-10" rx="10" ry="11" fill="#e8c898"/>
+          <!-- Hachimaki headband -->
+          <rect x="-10" y="-14" width="20" height="5" rx="1" fill="#d44a1a"/>
+          <!-- Arm raised with tool -->
+          <line x1="8" y1="5" x2="26" y2="-14" stroke="#1c3a5c" stroke-width="5" stroke-linecap="round"/>
+          <!-- Tool (hammer) -->
+          <rect x="22" y="-20" width="12" height="7" rx="1" fill="#7a5c3a"/>
+          <!-- Legs -->
+          <line x1="-4" y1="22" x2="-6" y2="40" stroke="#1c3a5c" stroke-width="5" stroke-linecap="round"/>
+          <line x1="4"  y1="22" x2="8"  y2="40" stroke="#1c3a5c" stroke-width="5" stroke-linecap="round"/>
+          <!-- Tabi-style feet -->
+          <ellipse cx="-6" cy="42" rx="5" ry="3" fill="#f0e8d8"/>
+          <ellipse cx="8"  cy="42" rx="5" ry="3" fill="#f0e8d8"/>
+          <!-- Pattern on jacket -->
+          <line x1="-6" y1="4"  x2="6"  y2="4"  stroke="#3a6a9c" stroke-width="1" opacity="0.5"/>
+          <line x1="-6" y1="8"  x2="6"  y2="8"  stroke="#3a6a9c" stroke-width="1" opacity="0.5"/>
+          <line x1="-6" y1="12" x2="6"  y2="12" stroke="#3a6a9c" stroke-width="1" opacity="0.5"/>
+        </g>
+
+        <!-- Worker 2 — crouching on middle beam -->
+        <g transform="translate(215, 148)">
+          <rect x="-8" y="0" width="16" height="18" rx="2" fill="#3a5c1c"/>
+          <ellipse cx="0" cy="-9" rx="9" ry="10" fill="#e8c898"/>
+          <rect x="-9" y="-13" width="18" height="4" rx="1" fill="#c8a830"/>
+          <!-- Arm forward with plank -->
+          <line x1="8" y1="6" x2="32" y2="3" stroke="#3a5c1c" stroke-width="4" stroke-linecap="round"/>
+          <rect x="28" y="0" width="28" height="6" rx="1" fill="#a8845a"/>
+          <!-- Crouching legs -->
+          <line x1="-4" y1="18" x2="-10" y2="30" stroke="#3a5c1c" stroke-width="4" stroke-linecap="round"/>
+          <line x1="4"  y1="18" x2="2"   y2="30" stroke="#3a5c1c" stroke-width="4" stroke-linecap="round"/>
+          <ellipse cx="-10" cy="32" rx="5" ry="3" fill="#f0e8d8"/>
+          <ellipse cx="2"   cy="32" rx="5" ry="3" fill="#f0e8d8"/>
+          <line x1="-6" y1="3" x2="6" y2="3" stroke="#5a8c3c" stroke-width="1" opacity="0.5"/>
+          <line x1="-6" y1="7" x2="6" y2="7" stroke="#5a8c3c" stroke-width="1" opacity="0.5"/>
+          <line x1="-6" y1="11" x2="6" y2="11" stroke="#5a8c3c" stroke-width="1" opacity="0.5"/>
+        </g>
+
+        <!-- Worker 3 — standing on right, holding banner -->
+        <g transform="translate(395, 85)">
+          <rect x="-8" y="0" width="16" height="22" rx="2" fill="#5c1c3a"/>
+          <ellipse cx="0" cy="-10" rx="10" ry="11" fill="#e8c898"/>
+          <rect x="-10" y="-14" width="20" height="5" rx="1" fill="#1c3a5c"/>
+          <!-- Both arms up holding banner pole -->
+          <line x1="-8" y1="6" x2="-22" y2="-12" stroke="#5c1c3a" stroke-width="5" stroke-linecap="round"/>
+          <line x1="8"  y1="6" x2="10"  y2="-15" stroke="#5c1c3a" stroke-width="5" stroke-linecap="round"/>
+          <!-- Banner pole -->
+          <line x1="10" y1="-15" x2="10" y2="-55" stroke="#7a5c3a" stroke-width="3"/>
+          <!-- Banner flag -->
+          <polygon points="10,-55 50,-45 10,-35" fill="#d44a1a" opacity="0.9"/>
+          <!-- Kanji on banner: 工事中 -->
+          <text x="14" y="-47" font-size="7" fill="#f5f0e8" font-family="serif" font-weight="bold">工</text>
+          <text x="14" y="-39" font-size="7" fill="#f5f0e8" font-family="serif" font-weight="bold">事</text>
+          <!-- Legs -->
+          <line x1="-4" y1="22" x2="-5" y2="42" stroke="#5c1c3a" stroke-width="5" stroke-linecap="round"/>
+          <line x1="4"  y1="22" x2="6"  y2="42" stroke="#5c1c3a" stroke-width="5" stroke-linecap="round"/>
+          <ellipse cx="-5" cy="44" rx="5" ry="3" fill="#f0e8d8"/>
+          <ellipse cx="6"  cy="44" rx="5" ry="3" fill="#f0e8d8"/>
+          <line x1="-6" y1="4"  x2="6" y2="4"  stroke="#8c3c5c" stroke-width="1" opacity="0.5"/>
+          <line x1="-6" y1="8"  x2="6" y2="8"  stroke="#8c3c5c" stroke-width="1" opacity="0.5"/>
+          <line x1="-6" y1="12" x2="6" y2="12" stroke="#8c3c5c" stroke-width="1" opacity="0.5"/>
+        </g>
+
+        <!-- Worker 4 — lower level, passing materials -->
+        <g transform="translate(310, 205)">
+          <rect x="-8" y="0" width="16" height="20" rx="2" fill="#1c3a5c"/>
+          <ellipse cx="0" cy="-9" rx="9" ry="10" fill="#e8c898"/>
+          <rect x="-9" y="-13" width="18" height="4" rx="1" fill="#d44a1a"/>
+          <line x1="-8" y1="7" x2="-28" y2="10" stroke="#1c3a5c" stroke-width="4" stroke-linecap="round"/>
+          <line x1="8"  y1="7" x2="20"  y2="-5" stroke="#1c3a5c" stroke-width="4" stroke-linecap="round"/>
+          <line x1="-4" y1="20" x2="-4" y2="38" stroke="#1c3a5c" stroke-width="4" stroke-linecap="round"/>
+          <line x1="4"  y1="20" x2="7"  y2="38" stroke="#1c3a5c" stroke-width="4" stroke-linecap="round"/>
+          <ellipse cx="-4" cy="40" rx="5" ry="3" fill="#f0e8d8"/>
+          <ellipse cx="7"  cy="40" rx="5" ry="3" fill="#f0e8d8"/>
+        </g>
+
+        <!-- Woodblock print border -->
+        <rect x="2" y="2" width="516" height="316" fill="none" stroke="#7a5c3a" stroke-width="3"/>
+        <rect x="6" y="6" width="508" height="308" fill="none" stroke="#a8845a" stroke-width="1"/>
+
+        <!-- Title cartouche top-left -->
+        <rect x="15" y="15" width="52" height="80" rx="2" fill="#f5f0e8" stroke="#7a5c3a" stroke-width="1.5"/>
+        <text x="29" y="35"  font-size="11" fill="#1c1410" font-family="serif" font-weight="bold">只</text>
+        <text x="29" y="50"  font-size="11" fill="#1c1410" font-family="serif" font-weight="bold">今</text>
+        <text x="29" y="65"  font-size="11" fill="#d44a1a" font-family="serif" font-weight="bold">工</text>
+        <text x="29" y="80"  font-size="11" fill="#d44a1a" font-family="serif" font-weight="bold">事</text>
+        <text x="29" y="88"  font-size="9"  fill="#7a6a58" font-family="serif">中</text>
+      </svg>
+
+      <p class="shop-kicker">お店 · Coming Soon</p>
+      <h1 class="shop-title">Shop Under<br/>Construction</h1>
+      <p class="shop-sub">Our workers are on it. Found in Japan apparel and goods are on the way — including some things you may have seen on the channel.</p>
+
+      <div class="shop-coming">Under Construction — Coming Soon</div>
+
+      <div class="shop-preview">
+        <span class="shop-preview-label">Things in the works</span>
+        <div class="shop-preview-item">Every Friday is Ebi Fry Day — apparel</div>
+        <div class="shop-preview-item">四字熟語 print series</div>
+        <div class="shop-preview-item">Found in Japan goods</div>
+        <div class="shop-preview-item">More to be announced</div>
+      </div>
+
+      <div class="shop-actions">
+        <a href="featured.html" class="btn btn-primary">See Featured Items</a>
+        <a href="https://youtube.com/foundinjapan" target="_blank" class="btn btn-ghost">Watch the Channel</a>
+      </div>
+    </div>
+
+    <div class="hero-wood-bar"></div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <p class="footer-copy">© 2026 Found in Japan · Osaka, Japan</p>
+        <a href="contact.html" class="footer-contact">contact@foundinjapan.co</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
