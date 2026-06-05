@@ -122,49 +122,7 @@
 
   <script src="main.js"></script>
   <script src="found.js"></script>
-  <script>
-    // Carousel init
-    function initCarousel(card) {
-      const imgs = card.querySelectorAll('.carousel-img');
-      if (imgs.length <= 1) return;
-      const wrap = card.querySelector('.found-card-img');
-      let idx = 0;
-
-      // Create controls
-      const prev = document.createElement('button');
-      prev.className = 'carousel-btn carousel-prev';
-      prev.innerHTML = '&#8249;';
-      const next = document.createElement('button');
-      next.className = 'carousel-btn carousel-next';
-      next.innerHTML = '&#8250;';
-
-      const dots = document.createElement('div');
-      dots.className = 'carousel-dots';
-      imgs.forEach((_, i) => {
-        const d = document.createElement('button');
-        d.className = 'carousel-dot' + (i === 0 ? ' active' : '');
-        d.addEventListener('click', () => goTo(i));
-        dots.appendChild(d);
-      });
-
-      wrap.appendChild(prev);
-      wrap.appendChild(next);
-      wrap.appendChild(dots);
-
-      function goTo(n) {
-        imgs[idx].classList.remove('active');
-        dots.children[idx].classList.remove('active');
-        idx = (n + imgs.length) % imgs.length;
-        imgs[idx].classList.add('active');
-        dots.children[idx].classList.add('active');
-      }
-
-      prev.addEventListener('click', () => goTo(idx - 1));
-      next.addEventListener('click', () => goTo(idx + 1));
-    }
-
-    document.querySelectorAll('.found-card-img.carousel').forEach(card => initCarousel(card));
-  </script>
+  
 
 </body>
 </html>
