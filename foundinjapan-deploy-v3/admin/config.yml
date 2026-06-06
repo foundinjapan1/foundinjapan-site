@@ -1,0 +1,24 @@
+backend:
+  name: github
+  repo: foundinjapan1/foundinjapan-site
+  branch: main
+  base_url: https://lucky-sea-1365.foundinjapanmail.workers.dev
+  auth_endpoint: /auth
+
+media_folder: "images"
+public_folder: "/images"
+
+collections:
+  - name: "found"
+    label: "What We Found"
+    folder: "_found"
+    create: true
+    fields:
+      - {label: "Name", name: "title", widget: "string"}
+      - {label: "Category", name: "category", widget: "select", options: ["food-drink", "shops-markets", "shrines-temples", "events", "places-sights"]}
+      - {label: "Location", name: "location", widget: "string"}
+      - {label: "Date", name: "date", widget: "string"}
+      - {label: "Note", name: "note", widget: "text"}
+      - {label: "Photos", name: "photos", widget: "list", field: {label: "Photo", name: "photo", widget: "image"}}
+      - {label: "Google Maps URL", name: "maps_url", widget: "string", required: false}
+      - {label: "YouTube URL", name: "video_url", widget: "string", required: false}
