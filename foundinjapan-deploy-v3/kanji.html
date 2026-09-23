@@ -1,732 +1,981 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>漢字 Stroke Order — Found in Japan</title>
-  <meta name="description" content="Interactive kanji stroke order viewer. Enter any kanji to see animated stroke order using KanjiVG data." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=DM+Mono:wght@400;500&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Klee+One:wght@400;600&family=New+Tegomin&family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;500;700&family=Shippori+Mincho:wght@400;500;700&family=Yuji+Syuku&family=Yusei+Magic&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
   <style>
-    /* ── Kanji tool specific styles — preserve original aesthetic ── */
     :root {
-      --k-ink:    #1a1008;
-      --k-paper:  #f5f0e8;
-      --k-paper2: #ede7d9;
-      --k-accent: #c0392b;
-      --k-border: #cfc5b0;
-      --k-muted:  #8a7f70;
+      --fij-paper: #F5F0E6;
+      --fij-ink: #1F1B18;
+      --fij-ink-muted: #736B63;
+      --fij-vermilion: #C23B22;
+      --fij-gold: #C09A58;
+      --fij-gold-light: #DFC38C;
+      --fij-border: #D8CEBC;
+      --fij-panel-bg: #EFE8D9;
+      --fij-blue: #2F4368;
+      --fij-blue-hover: #3E5680;
     }
 
-    .kanji-page {
-      background: var(--k-paper);
-      position: relative;
+    body {
+      background-color: var(--fij-paper);
+      color: var(--fij-ink);
+      font-family: 'Noto Sans JP', sans-serif;
     }
 
-    /* Grid overlay on kanji section only */
-    .kanji-page::before {
-      content: '';
-      position: fixed; inset: 0;
-      background-image:
-        repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(0,0,0,0.018) 28px, rgba(0,0,0,0.018) 29px),
-        repeating-linear-gradient(90deg, transparent, transparent 28px, rgba(0,0,0,0.012) 28px, rgba(0,0,0,0.012) 29px);
-      pointer-events: none; z-index: 0;
-    }
-
-    .kanji-wrap-outer {
-      position: relative;
-      z-index: 1;
-      max-width: 860px;
+    .kanji-wrap {
+      max-width: 1120px;
       margin: 0 auto;
-      padding: 2.5rem 1.5rem 4rem;
+      padding: 40px 20px 80px;
     }
 
-    /* ── Search ── */
-    .k-search-row {
-      display: flex; gap: 10px; margin-bottom: 1.5rem;
+    .kanji-header {
+      margin-bottom: 32px;
     }
 
-    .k-search-row input {
-      flex: 1;
-      font-family: 'Noto Serif JP', serif; font-size: 1.5rem;
-      padding: 10px 14px;
-      background: white;
-      border: 2px solid var(--k-border);
-      color: var(--k-ink);
-      outline: none;
-      transition: border-color 0.2s;
-      border-radius: 0;
-    }
-    .k-search-row input:focus { border-color: var(--k-accent); }
-    .k-search-row input::placeholder {
-      color: var(--k-muted); font-size: 0.85rem;
-      font-family: 'DM Mono', monospace;
-    }
-
-    .k-search-row button {
-      font-family: 'DM Mono', monospace; font-size: 0.78rem;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      padding: 10px 22px;
-      background: var(--k-ink); color: var(--k-paper);
-      border: 2px solid var(--k-ink); cursor: pointer;
-      transition: background 0.15s;
-      border-radius: 0;
-    }
-    .k-search-row button:hover { background: var(--k-accent); border-color: var(--k-accent); }
-
-    /* ── Error ── */
-    #k-error {
-      display: none;
-      background: #fdecea; border: 1.5px solid var(--k-accent);
-      padding: 10px 14px; font-size: 0.78rem; color: var(--k-accent);
-      margin-bottom: 1rem; font-family: 'DM Mono', monospace;
-      line-height: 1.6;
-    }
-
-    /* ── Viewer ── */
-    .k-viewer {
-      display: flex; gap: 2rem; align-items: flex-start; flex-wrap: wrap;
-    }
-
-    /* ── Kanji canvas ── */
-    .k-canvas-col {
-      flex-shrink: 0;
-      display: flex; flex-direction: column; align-items: center; gap: 14px;
-    }
-
-    .k-display {
-      width: 300px; height: 300px;
-      background: white;
-      border: 2px solid var(--k-ink);
-      box-shadow: 5px 5px 0 var(--k-ink);
-      position: relative; overflow: hidden;
-    }
-
-    .k-display::before {
-      content: '';
-      position: absolute; inset: 0;
-      background:
-        linear-gradient(var(--k-border) 1px, transparent 1px) 0 0 / 100% 50%,
-        linear-gradient(90deg, var(--k-border) 1px, transparent 1px) 0 0 / 50% 100%;
-      pointer-events: none; z-index: 1; opacity: 0.5;
-    }
-
-    #k-svg-container {
-      width: 100%; height: 100%;
-      position: absolute; inset: 0; z-index: 2;
-    }
-    #k-svg-container svg { width: 100%; height: 100%; display: block; }
-    #k-svg-container [id*="StrokeNumbers"] { display: none; }
-
-    #k-badge-layer {
-      position: absolute; inset: 0; z-index: 5; pointer-events: none;
-    }
-
-    .k-stroke-badge {
-      position: absolute;
-      width: 18px; height: 18px; border-radius: 50%;
-      background: var(--k-accent); color: white;
-      font-family: 'DM Mono', monospace;
-      font-size: 0.55rem; font-weight: 500;
-      display: flex; align-items: center; justify-content: center;
-      pointer-events: none; opacity: 0;
-      transition: opacity 0.25s ease;
-      transform: translate(-50%, -50%);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.35);
-      border: 1.5px solid white;
-    }
-
-    .k-progress-wrap {
-      width: 300px; height: 5px;
-      background: var(--k-paper2); border: 1px solid var(--k-border);
-    }
-    .k-progress-bar {
-      height: 100%; background: var(--k-accent);
-      transition: width 0.25s ease; width: 0%;
-    }
-
-    /* ── Controls ── */
-    .k-controls {
-      flex: 1; min-width: 260px;
-      display: flex; flex-direction: column; gap: 16px;
-    }
-
-    .k-info-box {
-      background: var(--k-paper2); border: 1px solid var(--k-border);
-      padding: 14px 16px; line-height: 1.9;
-    }
-    .k-kanji-large {
-      font-family: 'Noto Serif JP', serif; font-size: 3rem;
-      line-height: 1.05; display: block; margin-bottom: 4px;
-    }
-    .k-info-row { font-size: 0.72rem; color: var(--k-muted); letter-spacing: 0.05em; font-family: 'DM Mono', monospace; }
-    .k-info-row span { color: var(--k-accent); font-weight: 500; }
-
-    .k-speed-row {
-      display: flex; align-items: center; gap: 10px;
-      font-size: 0.7rem; color: var(--k-muted);
-      letter-spacing: 0.08em; text-transform: uppercase;
-      font-family: 'DM Mono', monospace;
-    }
-    .k-speed-row input[type=range] { flex: 1; accent-color: var(--k-accent); cursor: pointer; }
-
-    #k-variant-wrap { display: none; flex-direction: column; gap: 6px; }
-    #k-variant-wrap label { font-size: 0.7rem; color: var(--k-muted); letter-spacing: 0.1em; text-transform: uppercase; font-family: 'DM Mono', monospace; }
-    #k-variant-select {
-      font-family: 'DM Mono', monospace; font-size: 0.8rem;
-      padding: 6px 10px;
-      background: var(--k-paper2); border: 1.5px solid var(--k-border); color: var(--k-ink);
-      cursor: pointer; outline: none; border-radius: 0;
-    }
-    #k-variant-select:focus { border-color: var(--k-accent); }
-
-    .k-btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
-
-    .k-btn {
-      font-family: 'DM Mono', monospace; font-size: 0.7rem;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      padding: 9px 15px;
-      background: var(--k-paper2); color: var(--k-ink);
-      border: 1.5px solid var(--k-border); cursor: pointer;
-      transition: all 0.12s; border-radius: 0;
-    }
-    .k-btn:hover:not(:disabled) { background: var(--k-ink); color: var(--k-paper); border-color: var(--k-ink); }
-    .k-btn:disabled { opacity: 0.35; cursor: default; }
-    .k-btn.primary { background: var(--k-ink); color: var(--k-paper); border-color: var(--k-ink); }
-    .k-btn.primary:hover:not(:disabled) { background: var(--k-accent); border-color: var(--k-accent); }
-    .k-btn.active { background: var(--k-accent); color: white; border-color: var(--k-accent); }
-
-    /* ── Stroke Grid ── */
-    .k-grid-section {
-      margin-top: 2.5rem; border-top: 2px solid var(--k-border);
-      padding-top: 1.75rem; display: none;
-    }
-    .k-grid-title {
-      font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
-      color: var(--k-muted); margin-bottom: 14px; font-family: 'DM Mono', monospace;
-    }
-    .k-stroke-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-
-    .k-stroke-cell {
-      width: 90px; height: 90px;
-      background: white; border: 1.5px solid var(--k-border);
-      position: relative; overflow: hidden; cursor: pointer;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .k-stroke-cell:hover { border-color: var(--k-accent); box-shadow: 2px 2px 0 var(--k-accent); }
-    .k-stroke-cell.active-cell { border-color: var(--k-accent); box-shadow: 2px 2px 0 var(--k-accent); }
-    .k-stroke-cell::before {
-      content: '';
-      position: absolute; inset: 0;
-      background:
-        linear-gradient(var(--k-border) 1px, transparent 1px) 0 0 / 100% 50%,
-        linear-gradient(90deg, var(--k-border) 1px, transparent 1px) 0 0 / 50% 100%;
-      opacity: 0.4; pointer-events: none; z-index: 1;
-    }
-    .k-stroke-cell svg { width: 100%; height: 100%; display: block; position: relative; z-index: 2; }
-    .k-stroke-cell .k-num {
-      position: absolute; bottom: 3px; right: 4px;
-      font-size: 0.6rem; color: var(--k-accent); font-weight: 500;
-      z-index: 3; background: rgba(255,255,255,0.8); padding: 1px 3px;
-      font-family: 'DM Mono', monospace;
-    }
-
-    /* ── Attribution ── */
-    .k-attribution {
-      margin-top: 3rem;
-      border-top: 1px solid var(--k-border);
-      padding-top: 1.5rem;
-      font-family: 'DM Mono', monospace;
-      font-size: 0.72rem;
-      color: var(--k-muted);
-      line-height: 1.9;
-    }
-
-    .k-attribution strong {
-      color: var(--k-ink);
+    .kanji-subtitle {
+      font-family: 'Shippori Mincho', serif;
+      font-size: 1.1rem;
+      color: var(--fij-vermilion);
+      margin-bottom: 6px;
       display: block;
-      font-size: 0.75rem;
-      letter-spacing: 0.1em;
+    }
+
+    .kanji-title {
+      font-family: 'Cinzel', serif;
+      font-size: 2.5rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      margin: 0 0 12px;
+    }
+
+    .kanji-desc {
+      font-size: 0.95rem;
+      color: var(--fij-ink-muted);
+      max-width: 65ch;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .kanji-layout {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    @media (max-width: 880px) {
+      .kanji-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stage-frame {
+      border: 1px solid var(--fij-border);
+      background: #FFFFFF;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .transport {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .kanji-btn {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 500;
+      border: 1px solid var(--fij-ink);
+      background: var(--fij-paper);
+      color: var(--fij-ink);
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      letter-spacing: 0.03em;
+    }
+
+    .kanji-btn:hover:not(:disabled) {
+      background: var(--fij-border);
+    }
+
+    .kanji-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .kanji-btn.primary {
+      background: var(--fij-blue);
+      color: #FFFFFF;
+      border-color: var(--fij-blue);
+    }
+
+    .kanji-btn.primary:hover:not(:disabled) {
+      background: var(--fij-blue-hover);
+    }
+
+    .kanji-btn.record {
+      border-color: var(--fij-vermilion);
+      color: var(--fij-vermilion);
+    }
+
+    .kanji-btn.record:hover:not(:disabled) {
+      background: var(--fij-vermilion);
+      color: #FFFFFF;
+    }
+
+    .kanji-btn.record.active {
+      background: var(--fij-vermilion);
+      color: #FFFFFF;
+    }
+
+    .status {
+      font-size: 0.85rem;
+      color: var(--fij-ink-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .panel {
+      border: 1px solid var(--fij-border);
+      background: var(--fij-panel-bg);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--fij-ink-muted);
+      margin-bottom: 7px;
       text-transform: uppercase;
-      margin-bottom: 0.5rem;
+      letter-spacing: 0.05em;
     }
 
-    .k-attribution a {
-      color: var(--k-accent);
+    .field input[type=text] {
+      width: 100%;
+      font-family: 'Shippori Mincho', serif;
+      font-size: 1.4rem;
+      padding: 8px 12px;
+      border: 1px solid var(--fij-border);
+      background: var(--fij-paper);
+      color: var(--fij-ink);
+    }
+
+    .field input[type=text]:focus, select:focus, button:focus-visible {
+      outline: 2px solid var(--fij-blue);
+      outline-offset: 1px;
+    }
+
+    .load-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .load-row input {
+      flex: 1;
+    }
+
+    .error {
+      color: var(--fij-vermilion);
+      font-size: 0.82rem;
+      min-height: 1.3em;
+      line-height: 1.4;
+      margin-top: 4px;
+    }
+
+    .row-between {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--fij-ink-muted);
+      margin-top: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: var(--fij-blue);
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 0.88rem;
+      color: var(--fij-ink);
+      cursor: pointer;
+    }
+
+    input[type=checkbox] {
+      accent-color: var(--fij-blue);
+      width: 16px;
+      height: 16px;
+    }
+
+    select, input[type=color] {
+      font-family: inherit;
+      font-size: 0.88rem;
+      padding: 7px 9px;
+      border: 1px solid var(--fij-border);
+      background: var(--fij-paper);
+      color: var(--fij-ink);
+    }
+
+    input[type=color] {
+      padding: 2px;
+      width: 44px;
+      height: 32px;
+      cursor: pointer;
+    }
+
+    .swatch-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .swatch-row > div {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    hr.sep {
+      border: none;
+      border-top: 1px solid var(--fij-border);
+      margin: 0;
+    }
+
+    .attribution-footer {
+      margin-top: 36px;
+      font-size: 0.78rem;
+      color: var(--fij-ink-muted);
+      line-height: 1.6;
+      max-width: 70ch;
+    }
+
+    .attribution-footer a {
+      color: var(--fij-ink);
       text-decoration: underline;
-      text-underline-offset: 2px;
-    }
-
-    .k-attribution a:hover { color: var(--k-ink); }
-
-    .hidden { display: none !important; }
-
-    @media (max-width: 680px) {
-      .k-display { width: 260px; height: 260px; }
-      .k-progress-wrap { width: 260px; }
-      .k-canvas-col { width: 100%; }
-      .kanji-wrap-outer { padding: 1.5rem 1rem 3rem; }
     }
   </style>
 </head>
-<body class="kanji-page">
+<body>
 
-  <nav class="nav">
-    <div class="nav-inner">
-      <a href="index.html" class="nav-logo">
-        <img src="fij-logo.png" alt="Found in Japan" class="nav-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'"/>
-        <span class="nav-logo-text" style="display:none">Found in Japan</span>
+  <!-- SITE HEADER / NAVIGATION -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="logo">
+        <img src="fij-logo.png" alt="Found in Japan" class="logo-img">
       </a>
-      <ul class="nav-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="about.html">About</a></li>
-        <li><a href="videos.html">Videos</a></li>
-        <li><a href="found.html">What We Found</a></li>
-        <li><a href="featured.html">Featured Items</a></li>
-        <li><a href="shop.html">Shop</a></li>
-        <li><a href="kanji.html" class="active">漢字</a></li>
-        <li><a href="contact.html">Contact</a></li>
-      </ul>
-      <button class="nav-toggle" aria-label="Menu">
-        <span></span><span></span><span></span>
-      </button>
+      <nav class="main-nav">
+        <a href="index.html">HOME</a>
+        <a href="about.html">ABOUT</a>
+        <a href="videos.html">VIDEOS</a>
+        <a href="found.html">WHAT WE FOUND</a>
+        <a href="featured.html">FEATURED ITEMS</a>
+        <a href="shop.html">SHOP</a>
+        <a href="kanji.html" class="active">漢字</a>
+        <a href="contact.html">CONTACT</a>
+      </nav>
     </div>
-  </nav>
+  </header>
 
-  <section class="page-hero">
-    <div class="shoji-overlay"></div>
-    <div class="container">
-      <p class="hero-kicker">筆順</p>
-      <h1 class="page-title">漢字 Stroke Order</h1>
-      <p class="page-hero-sub">Enter any kanji to see animated stroke order. Step through each stroke or watch them all play.</p>
-    </div>
-    <div class="hero-wood-bar"></div>
-  </section>
-
-  <div class="kanji-wrap-outer">
-
-    <div class="k-search-row">
-      <input type="text" id="k-search" placeholder="Enter kanji 馬 or hex 9f8a" maxlength="10"
-             onkeydown="if(event.key==='Enter') loadKanji()">
-      <button onclick="loadKanji()">Load →</button>
+  <!-- MAIN KANJI ANIMATOR CONTENT -->
+  <main class="kanji-wrap">
+    <div class="kanji-header">
+      <span class="kanji-subtitle">筆順</span>
+      <h1 class="kanji-title">Kanji Stroke Animator</h1>
+      <p class="kanji-desc">Type any word in kanji, hiragana, or katakana[cite: 22]. Each character draws stroke by stroke, in the correct order, using stroke data from the KanjiVG project[cite: 22]. Record a clip straight to a downloadable video file for use as a video overlay[cite: 22].</p>
     </div>
 
-    <div id="k-error"></div>
-
-    <div id="k-main-viewer" class="k-viewer hidden">
-
-      <div class="k-canvas-col">
-        <div class="k-display" id="k-display">
-          <div id="k-svg-container"></div>
-          <div id="k-badge-layer"></div>
+    <div class="kanji-layout">
+      <section>
+        <div class="stage-frame">
+          <canvas id="stage" width="360" height="360"></canvas>
         </div>
-        <div class="k-progress-wrap"><div class="k-progress-bar" id="k-progress-bar"></div></div>
-      </div>
-
-      <div class="k-controls">
-        <div class="k-info-box">
-          <span class="k-kanji-large" id="k-kanji-label">—</span>
-          <div class="k-info-row">File: <span id="k-filename-label">—</span></div>
-          <div class="k-info-row">Unicode: <span id="k-unicode-label">—</span></div>
-          <div class="k-info-row">Stroke: <span id="k-stroke-current">0</span> / <span id="k-stroke-total">0</span></div>
+        <div class="transport">
+          <button id="playBtn" class="kanji-btn primary" disabled>▶ Play</button>
+          <button id="recordBtn" class="kanji-btn record" disabled>● Record clip</button>
+          <span id="statusEl" class="status"></span>
         </div>
+      </section>
 
-        <div class="k-btn-group">
-          <button class="k-btn" id="k-btn-prev" onclick="stepStroke(-1)" disabled>◀ Prev</button>
-          <button class="k-btn" id="k-btn-next" onclick="stepStroke(1)"  disabled>Next ▶</button>
-        </div>
-        <div class="k-btn-group">
-          <button class="k-btn primary" id="k-btn-play"   onclick="playAll()">▶ Play All</button>
-          <button class="k-btn"         id="k-btn-replay" onclick="replayAll()">↺ Replay</button>
-          <button class="k-btn"         id="k-btn-reset"  onclick="resetStrokes()">⊘ Reset</button>
+      <aside class="panel">
+        <div class="field">
+          <label for="charInput">Word or character</label>
+          <div class="load-row">
+            <input id="charInput" type="text" value="字" maxlength="8" autocomplete="off" spellcheck="false">
+            <button id="loadBtn" class="kanji-btn">Load</button>
+          </div>
+          <div id="errorEl" class="error"></div>
         </div>
 
-        <div class="k-speed-row">
-          <span>Speed</span>
-          <input type="range" id="k-speed-slider" min="200" max="2000" value="700" step="100">
-          <span id="k-speed-label">0.7s</span>
+        <hr class="sep">
+
+        <div class="field">
+          <label>Stroke timing</label>
+          <div style="display:flex; gap:16px; font-size:.85rem; margin-bottom:10px;">
+            <label style="display:flex; align-items:center; gap:6px; color:var(--fij-ink); cursor:pointer;">
+              <input type="radio" name="timingMode" id="modePer" checked> Per stroke
+            </label>
+            <label style="display:flex; align-items:center; gap:6px; color:var(--fij-ink); cursor:pointer;">
+              <input type="radio" name="timingMode" id="modeTotal"> Total time
+            </label>
+          </div>
+          <div id="perStrokeField">
+            <input id="speedRange" type="range" min="150" max="1200" step="10" value="500">
+            <div class="row-between"><span>Fast</span><span id="speedVal">500 ms/stroke</span><span>Slow</span></div>
+          </div>
+          <div id="totalTimeField" style="display:none;">
+            <input id="totalTimeRange" type="range" min="1" max="20" step="0.5" value="3">
+            <div class="row-between"><span>Fast</span><span id="totalTimeVal">3.0 s total</span><span>Slow</span></div>
+          </div>
         </div>
 
-        <div id="k-variant-wrap">
-          <label>Variant / Style</label>
-          <select id="k-variant-select" onchange="loadVariant(this.value)"></select>
+        <div class="field">
+          <label for="pauseRange">Pause between strokes</label>
+          <input id="pauseRange" type="range" min="0" max="500" step="10" value="150">
+          <div class="row-between"><span></span><span id="pauseVal">150 ms</span><span></span></div>
         </div>
 
-        <div class="k-btn-group">
-          <button class="k-btn" onclick="toggleGrid()">⊞ Stroke Grid</button>
-          <button class="k-btn" onclick="openInNewTab()">↗ Open SVG</button>
+        <div class="field">
+          <label for="sizeRange">Character size</label>
+          <input id="sizeRange" type="range" min="200" max="600" step="10" value="360">
+          <div class="row-between"><span></span><span id="sizeVal">360 px per tile</span><span></span></div>
         </div>
-      </div>
+
+        <div class="swatch-row">
+          <div>
+            <label for="strokeColor" style="margin:0;font-size:.82rem;color:var(--fij-ink-muted);">Finished color</label>
+            <input id="strokeColor" type="color" value="#1F1B18">
+          </div>
+          <div>
+            <label for="bgSelect" style="margin:0;font-size:.82rem;color:var(--fij-ink-muted);">Background</label>
+            <select id="bgSelect">
+              <option value="#ffffff">White</option>
+              <option value="#000000">Black</option>
+              <option value="#00ff00">Green screen</option>
+              <option value="#f5f0e6">Paper</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="thicknessRange">Stroke thickness</label>
+          <input id="thicknessRange" type="range" min="1" max="6" step="0.1" value="2.4">
+          <div class="row-between"><span>Thin</span><span id="thicknessVal">2.4%</span><span>Thick</span></div>
+        </div>
+
+        <div class="field">
+          <label for="guideStyleSelect">Guide style</label>
+          <select id="guideStyleSelect" style="width:100%;">
+            <option value="trace" selected>Traced outline (exact match)</option>
+            <option value="font">Font glyph</option>
+          </select>
+        </div>
+
+        <div class="field" id="guideFontField" style="display:none;">
+          <label for="fontSelect">Guide font</label>
+          <select id="fontSelect" style="width:100%;">
+            <option value="Noto Sans JP" selected>Noto Sans JP (gothic)</option>
+            <option value="Noto Serif JP">Noto Serif JP (mincho)</option>
+            <option value="New Tegomin">New Tegomin (handwritten mincho)</option>
+            <option value="Shippori Mincho">Shippori Mincho</option>
+            <option value="Zen Kaku Gothic New">Zen Kaku Gothic New</option>
+            <option value="Klee One">Klee One (soft brush)</option>
+            <option value="Yuji Syuku">Yuji Syuku (calligraphy)</option>
+            <option value="Yusei Magic">Yusei Magic (handwritten)</option>
+          </select>
+        </div>
+
+        <label class="check"><input type="checkbox" id="guideCheck" checked> Show guide</label>
+        <label class="check"><input type="checkbox" id="gridCheck" checked> Show grid lines</label>
+        <label class="check"><input type="checkbox" id="loopCheck"> Loop playback</label>
+
+        <hr class="sep">
+        <div style="font-size:.78rem;color:var(--fij-ink-muted);line-height:1.5;">
+          Recording captures the canvas directly, at up to 8 characters per clip, and downloads a .webm file when the animation finishes[cite: 22]. Works best in Chrome or Edge[cite: 22].
+        </div>
+      </aside>
     </div>
 
-    <div class="k-grid-section" id="k-grid-section">
-      <div class="k-grid-title">Stroke-by-stroke · click a cell to jump to that stroke</div>
-      <div class="k-stroke-grid" id="k-stroke-grid"></div>
-      <p style="font-size:0.72rem;color:var(--k-muted);margin-top:12px;line-height:1.7;font-family:'DM Mono',monospace;">
-        Gray = previous strokes · Red = current stroke · Invisible = not yet drawn
-      </p>
+    <div class="attribution-footer">
+      Stroke data © KanjiVG project by Ulrich Apel, licensed under[cite: 22]
+      <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a>[cite: 22].
+      Credit "KanjiVG" (kanjivg.tagaini.net) wherever clips from this tool are published[cite: 22].
     </div>
+  </main>
 
-    <!-- Attribution / Citation -->
-    <div class="k-attribution">
-      <strong>Data Source &amp; Attribution</strong>
-      Stroke order data provided by <a href="https://kanjivg.tagaini.net" target="_blank">KanjiVG</a>,
-      created by Ulrich Apel and contributors.<br>
-      KanjiVG is licensed under the
-      <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank">Creative Commons Attribution-Share Alike 3.0</a> license.<br>
-      Source files and full dataset available at
-      <a href="https://github.com/KanjiVG/kanjivg" target="_blank">github.com/KanjiVG/kanjivg</a>.<br><br>
-      This viewer is part of Found in Japan and is provided for educational purposes.
-      No modification has been made to the KanjiVG SVG data.
-    </div>
-
-  </div>
-
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-inner">
-        <p class="footer-copy">© 2026 Found in Japan · Osaka, Japan</p>
-        <a href="contact.html" class="footer-contact">contact@foundinjapan.co</a>
-      </div>
+  <!-- SITE FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p>&copy; 2026 Found in Japan &middot; Osaka, Japan</p>
+      <a href="mailto:contact@foundinjapan.co" class="footer-email">contact@foundinjapan.co</a>
     </div>
   </footer>
 
-  <script src="main.js"></script>
+  <svg id="hiddenSvg" style="position:absolute; width:0; height:0; overflow:hidden;" aria-hidden="true"></svg>
+
+  <!-- CANVAS ENGINE SCRIPT -->
   <script>
-    // ─── Base URL for Raw KanjiVG SVGs ─────────────────────────────────────────
+  (() => {
     const KANJIVG_BASE = 'https://raw.githubusercontent.com/KanjiVG/kanjivg/master/kanji/';
 
-    // ─── State ───────────────────────────────────────────────────────────────
-    let allPaths    = [];
-    let currentStep = -1;
-    let isPlaying   = false;
-    let playTimer   = null;
-    let currentFile = '';
-    let currentHex  = '';
-    let currentChar = '';
-    let gridBuilt   = false;
+    const canvas = document.getElementById('stage');
+    const ctx = canvas.getContext('2d');
+    const hiddenSvg = document.getElementById('hiddenSvg');
 
-    const PAST_COLORS = ['#d4c8b8','#c4b8a4','#b4a890','#a09078','#8a7860','#706050','#504030','#302010'];
+    const charInput = document.getElementById('charInput');
+    const loadBtn = document.getElementById('loadBtn');
+    const playBtn = document.getElementById('playBtn');
+    const recordBtn = document.getElementById('recordBtn');
+    const statusEl = document.getElementById('statusEl');
+    const errorEl = document.getElementById('errorEl');
 
-    document.getElementById('k-speed-slider').addEventListener('input', function() {
-      document.getElementById('k-speed-label').textContent = (this.value / 1000).toFixed(1) + 's';
-    });
+    const modePer = document.getElementById('modePer');
+    const modeTotal = document.getElementById('modeTotal');
+    const perStrokeField = document.getElementById('perStrokeField');
+    const totalTimeField = document.getElementById('totalTimeField');
+    const speedRange = document.getElementById('speedRange');
+    const totalTimeRange = document.getElementById('totalTimeRange');
+    const pauseRange = document.getElementById('pauseRange');
+    const sizeRange = document.getElementById('sizeRange');
+    const speedVal = document.getElementById('speedVal');
+    const totalTimeVal = document.getElementById('totalTimeVal');
+    const pauseVal = document.getElementById('pauseVal');
+    const sizeVal = document.getElementById('sizeVal');
+    const strokeColorInput = document.getElementById('strokeColor');
+    const bgSelect = document.getElementById('bgSelect');
+    const thicknessRange = document.getElementById('thicknessRange');
+    const thicknessVal = document.getElementById('thicknessVal');
+    const guideStyleSelect = document.getElementById('guideStyleSelect');
+    const guideFontField = document.getElementById('guideFontField');
+    const fontSelect = document.getElementById('fontSelect');
+    const guideCheck = document.getElementById('guideCheck');
+    const gridCheck = document.getElementById('gridCheck');
+    const loopCheck = document.getElementById('loopCheck');
 
-    function getSpeed() { return parseInt(document.getElementById('k-speed-slider').value); }
+    const STROKE_COLORS = ['#2F6FED', '#E85D9C', '#E8821E', '#8B4FC2', '#3FA34D'];
 
-    function charToHex(ch) { return ch.codePointAt(0).toString(16).padStart(5,'0'); }
+    let words = [];
+    let tileSize = 360;
+    let timingMode = 'per';
+    let strokeDurationMs = 500;
+    let totalTimeSeconds = 3;
+    let pauseMs = 150;
+    const interCharPauseMs = 400;
+    let showGrid = true;
+    let guideVisible = true;
+    let guideStyle = 'trace';
+    let guideFont = 'Noto Sans JP';
+    let strokeWidthPct = 2.4;
+    let loop = false;
+    let strokeColor = '#1F1B18';
+    let bgColor = '#ffffff';
 
-    function loadKanji() {
-      const input = document.getElementById('k-search').value.trim();
-      if (!input) return;
-      let hex;
-      if ([...input].length === 1) {
-        currentChar = input;
-        hex = charToHex(input);
-      } else {
-        hex = input.toLowerCase().padStart(5,'0');
-        try { currentChar = String.fromCodePoint(parseInt(hex,16)); } catch(e) { currentChar = ''; }
+    let totalDuration = 0;
+    let playing = false;
+    let isRecording = false;
+    let animStart = 0;
+    let rafId = null;
+    let recorder = null;
+    let recordedChunks = [];
+
+    function codepointFile(ch){
+      const cp = ch.codePointAt(0).toString(16).padStart(5, '0');
+      return `${KANJIVG_BASE}${cp}.svg`;
+    }
+
+    async function fetchCharData(ch){
+      let res;
+      try{
+        res = await fetch(codepointFile(ch));
+      } catch(e){
+        throw new Error(`Couldn't reach KanjiVG for "${ch}". Check your connection.`);
       }
-      currentHex  = hex;
-      currentFile = hex + '.svg';
-      fetchAndRender(currentFile);
-      populateVariants(hex);
-    }
+      if(!res.ok) throw new Error(`No stroke data found for "${ch}".`);
+      const text = await res.text();
+      const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+      if(doc.querySelector('parsererror')) throw new Error(`Couldn't read stroke data for "${ch}".`);
+      const svgEl = doc.querySelector('svg');
+      const vbRaw = (svgEl && svgEl.getAttribute('viewBox')) || '0 0 109 109';
+      const vb = vbRaw.trim().split(/\s+/).map(Number);
+      const pathEls = Array.from(doc.querySelectorAll('path'));
+      if(pathEls.length === 0) throw new Error(`No stroke paths found for "${ch}".`);
 
-    function loadVariant(filename) {
-      currentFile = filename;
-      fetchAndRender(filename);
-      gridBuilt = false;
-      document.getElementById('k-grid-section').style.display = 'none';
-    }
-
-    async function fetchAndRender(filename) {
-      hideError();
-      stopPlay();
-      try {
-        const resp = await fetch(KANJIVG_BASE + filename);
-        if (!resp.ok) throw new Error('Kanji stroke data not found: ' + filename);
-        const svgText = await resp.text();
-        buildAnimatedSVG(svgText, filename);
-      } catch(e) {
-        showError('Could not fetch stroke data from KanjiVG. Check character input or internet connection.');
-      }
-    }
-
-    function buildAnimatedSVG(svgText, filename) {
-      const parser  = new DOMParser();
-      const doc     = parser.parseFromString(svgText, 'image/svg+xml');
-      const origSvg = doc.querySelector('svg');
-      if (!origSvg) { showError('Could not parse SVG.'); return; }
-
-      const container = document.getElementById('k-svg-container');
-      container.innerHTML = '';
-      const svg = document.importNode(origSvg, true);
-      svg.setAttribute('width','100%');
-      svg.setAttribute('height','100%');
-      container.appendChild(svg);
-
-      let strokeEls = Array.from(svg.querySelectorAll('[id*="StrokePaths"] path'));
-      if (strokeEls.length === 0) strokeEls = Array.from(svg.querySelectorAll('path'));
-
-      allPaths = strokeEls.map(el => {
-        const len = el.getTotalLength ? el.getTotalLength() : 200;
-        const origStroke = el.getAttribute('stroke') || '#000';
-        let startPt = {x: 50, y: 50};
-        try { const p = el.getPointAtLength(0); startPt = {x: p.x, y: p.y}; } catch(e) {}
-        return { el, length: len, origStroke, startPt };
+      const strokes = pathEls.map(p => {
+        const live = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        live.setAttribute('d', p.getAttribute('d') || '');
+        hiddenSvg.appendChild(live);
+        let len = 0, pts = [];
+        try{
+          len = live.getTotalLength();
+          const n = Math.max(20, Math.min(120, Math.round(len / 2)));
+          for(let i = 0; i <= n; i++){
+            const pt = live.getPointAtLength(len * i / n);
+            pts.push([pt.x, pt.y]);
+          }
+        } finally {
+          hiddenSvg.removeChild(live);
+        }
+        return {points: pts, length: len, start: 0, end: 0};
       });
 
-      document.getElementById('k-badge-layer').innerHTML = '';
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      strokes.forEach(s => s.points.forEach(([x, y]) => {
+        if(x < minX) minX = x;
+        if(x > maxX) maxX = x;
+        if(y < minY) minY = y;
+        if(y > maxY) maxY = y;
+      }));
+      if(!isFinite(minX)){ minX = 0; minY = 0; maxX = 109; maxY = 109; }
+      const bbox = {minX, minY, maxX, maxY};
 
-      allPaths.forEach(({el, length}) => {
-        el.style.strokeDasharray  = length;
-        el.style.strokeDashoffset = length;
-        el.style.fill = 'none';
-        el.style.transition = 'none';
-      });
-
-      currentStep = -1;
-      gridBuilt   = false;
-
-      document.getElementById('k-kanji-label').textContent   = currentChar || ('U+' + currentHex.toUpperCase());
-      document.getElementById('k-filename-label').textContent = filename;
-      document.getElementById('k-unicode-label').textContent  = 'U+' + currentHex.toUpperCase();
-      document.getElementById('k-stroke-total').textContent   = allPaths.length;
-      document.getElementById('k-stroke-current').textContent = 0;
-      document.getElementById('k-progress-bar').style.width   = '0%';
-
-      document.getElementById('k-main-viewer').classList.remove('hidden');
-      document.getElementById('k-btn-prev').disabled = true;
-      document.getElementById('k-btn-next').disabled = false;
-
-      if (document.getElementById('k-grid-section').style.display !== 'none') buildGrid();
+      return {char: ch, vb, strokes, bbox};
     }
 
-    function drawStroke(index, speed) {
-      const {el, length, startPt} = allPaths[index];
-      const spd = speed ?? getSpeed();
-      const t     = allPaths.length > 1 ? index / (allPaths.length - 1) : 1;
-      const r     = Math.round(180 - t * 162);
-      const g     = Math.round(140 - t * 124);
-      const b     = Math.round(100 - t * 92);
-      const color = `rgb(${r},${g},${b})`;
-      el.setAttribute('stroke', color);
-      el.style.strokeDasharray  = length;
-      el.style.strokeDashoffset = length;
-      el.style.transition = 'none';
-      void el.getBoundingClientRect();
-      el.style.transition = `stroke-dashoffset ${spd}ms ease-in-out`;
-      el.style.strokeDashoffset = '0';
-      showBadge(index, startPt, spd);
-    }
-
-    function showBadge(index, startPt, spd) {
-      const layer = document.getElementById('k-badge-layer');
-      const svg   = document.querySelector('#k-svg-container svg');
-      if (!svg) return;
-      const vb   = svg.viewBox.baseVal;
-      const vbW  = vb.width  || 109;
-      const vbH  = vb.height || 109;
-      const boxW = 300;
-      const boxH = 300;
-      const pxX  = (startPt.x / vbW) * boxW;
-      const pxY  = (startPt.y / vbH) * boxH;
-      let badge = document.getElementById('k-badge-' + index);
-      if (!badge) {
-        badge = document.createElement('div');
-        badge.className = 'k-stroke-badge';
-        badge.id = 'k-badge-' + index;
-        badge.textContent = index + 1;
-        layer.appendChild(badge);
-      }
-      badge.style.left = pxX + 'px';
-      badge.style.top  = pxY + 'px';
-      badge.style.opacity = '0';
-      badge.style.transition = 'none';
-      setTimeout(() => {
-        badge.style.transition = 'opacity 0.3s ease';
-        badge.style.opacity    = '1';
-        setTimeout(() => {
-          badge.style.transition = 'opacity 0.6s ease';
-          badge.style.opacity    = '0';
-        }, spd + 600);
-      }, Math.min(spd * 0.3, 200));
-    }
-
-    function hideStroke(index) {
-      const {el, length} = allPaths[index];
-      el.style.transition = 'none';
-      el.style.strokeDashoffset = length;
-      el.setAttribute('stroke', el.origStroke || '#000');
-    }
-
-    function setPastColor(index) {
-      const {el} = allPaths[index];
-      el.style.transition = 'none';
-      el.style.strokeDashoffset = '0';
-      const shade = PAST_COLORS[Math.min(index, PAST_COLORS.length - 1)];
-      el.setAttribute('stroke', shade);
-    }
-
-    function updateUI() {
-      const drawn = currentStep + 1;
-      const total = allPaths.length;
-      document.getElementById('k-stroke-current').textContent = drawn;
-      document.getElementById('k-progress-bar').style.width   = (total ? (drawn / total * 100) : 0) + '%';
-      document.getElementById('k-btn-prev').disabled = currentStep < 0;
-      document.getElementById('k-btn-next').disabled = currentStep >= total - 1;
-      highlightGridCell(currentStep);
-    }
-
-    function stepStroke(dir) {
-      stopPlay();
-      if (dir > 0) {
-        if (currentStep >= allPaths.length - 1) return;
-        if (currentStep >= 0) setPastColor(currentStep);
-        currentStep++;
-        drawStroke(currentStep);
-      } else {
-        if (currentStep < 0) return;
-        hideStroke(currentStep);
-        currentStep--;
-        if (currentStep >= 0) drawStroke(currentStep, 0);
-      }
-      updateUI();
-    }
-
-    function playAll() {
-      if (isPlaying) { stopPlay(); return; }
-      if (currentStep >= allPaths.length - 1) { resetStrokes(); }
-      isPlaying = true;
-      document.getElementById('k-btn-play').textContent = '⏸ Pause';
-      document.getElementById('k-btn-play').classList.add('active');
-      playNext();
-    }
-
-    function playNext() {
-      if (!isPlaying || currentStep >= allPaths.length - 1) { stopPlay(); return; }
-      if (currentStep >= 0) setPastColor(currentStep);
-      currentStep++;
-      drawStroke(currentStep);
-      updateUI();
-      playTimer = setTimeout(playNext, getSpeed() + 80);
-    }
-
-    function stopPlay() {
-      isPlaying = false;
-      clearTimeout(playTimer);
-      document.getElementById('k-btn-play').textContent = '▶ Play All';
-      document.getElementById('k-btn-play').classList.remove('active');
-    }
-
-    function replayAll() { stopPlay(); resetStrokes(); setTimeout(playAll, 120); }
-
-    function resetStrokes() {
-      stopPlay();
-      allPaths.forEach(({el, length}) => {
-        el.style.transition       = 'none';
-        el.style.strokeDashoffset = length;
-      });
-      document.getElementById('k-badge-layer').innerHTML = '';
-      currentStep = -1;
-      updateUI();
-    }
-
-    function toggleGrid() {
-      const sec = document.getElementById('k-grid-section');
-      if (sec.style.display === 'none' || sec.style.display === '') {
-        sec.style.display = 'block';
-        if (!gridBuilt) buildGrid();
-        sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        sec.style.display = 'none';
-      }
-    }
-
-    function buildGrid() {
-      const grid = document.getElementById('k-stroke-grid');
-      grid.innerHTML = '';
-      if (allPaths.length === 0) return;
-      const svgEl = document.querySelector('#k-svg-container svg');
-      if (!svgEl) return;
-      const vb = svgEl.getAttribute('viewBox') || '0 0 109 109';
-      let strokeEls = Array.from(svgEl.querySelectorAll('[id*="StrokePaths"] path'));
-      if (strokeEls.length === 0) strokeEls = Array.from(svgEl.querySelectorAll('path'));
-      strokeEls.forEach((path, i) => {
-        const cell = document.createElement('div');
-        cell.className = 'k-stroke-cell';
-        cell.id = 'k-grid-cell-' + i;
-        cell.onclick = () => jumpToStroke(i);
-        const miniSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        miniSvg.setAttribute('viewBox', vb);
-        strokeEls.forEach((p, j) => {
-          const el = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          el.setAttribute('d', p.getAttribute('d') || '');
-          el.setAttribute('fill', 'none');
-          el.setAttribute('stroke-linecap', 'round');
-          el.setAttribute('stroke-linejoin', 'round');
-          if (j < i)       { el.setAttribute('stroke', '#c8bfb0'); el.setAttribute('stroke-width', '3.5'); }
-          else if (j === i) { el.setAttribute('stroke', '#c0392b'); el.setAttribute('stroke-width', '4.5'); }
-          else              { el.setAttribute('stroke', 'none'); }
-          miniSvg.appendChild(el);
+    function buildTimeline(){
+      let t = 0;
+      words.forEach((data, ci) => {
+        data.strokes.forEach((s, si) => {
+          s.start = t;
+          s.end = t + strokeDurationMs;
+          t += strokeDurationMs;
+          if(si < data.strokes.length - 1) t += pauseMs;
         });
-        const num = document.createElement('div');
-        num.className = 'k-num';
-        num.textContent = i + 1;
-        cell.appendChild(miniSvg);
-        cell.appendChild(num);
-        grid.appendChild(cell);
+        if(ci < words.length - 1) t += interCharPauseMs;
       });
-      gridBuilt = true;
-      highlightGridCell(currentStep);
+      return t;
     }
 
-    function highlightGridCell(index) {
-      document.querySelectorAll('.k-stroke-cell').forEach((c, i) => {
-        c.classList.toggle('active-cell', i === index);
+    function applyTotalTiming(){
+      const totalStrokes = words.reduce((a, d) => a + d.strokes.length, 0);
+      if(totalStrokes === 0) return;
+      const charCount = words.length;
+      const totalPauseMs = pauseMs * (totalStrokes - charCount) + interCharPauseMs * Math.max(0, charCount - 1);
+      const targetMs = totalTimeSeconds * 1000;
+      const available = Math.max(totalStrokes * 40, targetMs - totalPauseMs);
+      strokeDurationMs = available / totalStrokes;
+    }
+
+    function updateTimingFromMode(){
+      if(timingMode === 'total') applyTotalTiming();
+      if(words.length){
+        totalDuration = buildTimeline();
+        if(!playing) drawAtTime(0);
+      }
+    }
+
+    function computeCanvasSize(){
+      const n = Math.max(1, words.length);
+      return {w: tileSize * n, h: tileSize};
+    }
+
+    function resizeCanvas(){
+      const {w, h} = computeCanvasSize();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function layoutTransform(idx){
+      const data = words[idx];
+      const {minX, minY, maxX, maxY} = data.bbox;
+      const bw = Math.max(1e-6, maxX - minX);
+      const bh = Math.max(1e-6, maxY - minY);
+      const pad = tileSize * 0.08;
+      const avail = tileSize - pad * 2;
+      let scaleX = avail / bw;
+      let scaleY = avail / bh;
+      const maxRatio = 3;
+      if(scaleX > scaleY * maxRatio) scaleX = scaleY * maxRatio;
+      if(scaleY > scaleX * maxRatio) scaleY = scaleX * maxRatio;
+      const offsetX = idx * tileSize + pad - minX * scaleX + (avail - bw * scaleX) / 2;
+      const offsetY = pad - minY * scaleY + (avail - bh * scaleY) / 2;
+      return (x, y) => [offsetX + x * scaleX, offsetY + y * scaleY];
+    }
+
+    function drawGrid(ci){
+      const x0 = ci * tileSize;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(47,67,104,0.28)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      ctx.strokeRect(x0 + 0.5, 0.5, tileSize - 1, tileSize - 1);
+      ctx.beginPath();
+      ctx.moveTo(x0 + tileSize / 2, 0);
+      ctx.lineTo(x0 + tileSize / 2, tileSize);
+      ctx.moveTo(x0, tileSize / 2);
+      ctx.lineTo(x0 + tileSize, tileSize / 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x0, 0);
+      ctx.lineTo(x0 + tileSize, tileSize);
+      ctx.moveTo(x0 + tileSize, 0);
+      ctx.lineTo(x0, tileSize);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawTracedGuide(ci){
+      const data = words[ci];
+      const tf = layoutTransform(ci);
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.strokeStyle = '#1F1B18';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(2, tileSize * 0.024);
+      data.strokes.forEach(s => {
+        const pts = s.points;
+        if(pts.length < 2) return;
+        ctx.beginPath();
+        const [x0, y0] = tf(pts[0][0], pts[0][1]);
+        ctx.moveTo(x0, y0);
+        for(let i = 1; i < pts.length; i++){
+          const [x, y] = tf(pts[i][0], pts[i][1]);
+          ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+
+    function drawGuideGlyph(ci){
+      if(!guideFont) return;
+      const data = words[ci];
+      const x0 = ci * tileSize;
+      const pad = tileSize * 0.08;
+      const avail = tileSize - pad * 2;
+      ctx.save();
+      ctx.font = '100px "' + guideFont + '"';
+      const m = ctx.measureText(data.char);
+      const left = m.actualBoundingBoxLeft || 0;
+      const right = m.actualBoundingBoxRight || m.width || 90;
+      const asc = m.actualBoundingBoxAscent || 80;
+      const desc = m.actualBoundingBoxDescent || 10;
+      const bw = Math.max(1e-6, left + right);
+      const bh = Math.max(1e-6, asc + desc);
+      let scaleX = avail / bw;
+      let scaleY = avail / bh;
+      const maxRatio = 3;
+      if(scaleX > scaleY * maxRatio) scaleX = scaleY * maxRatio;
+      if(scaleY > scaleX * maxRatio) scaleY = scaleX * maxRatio;
+      ctx.translate(x0 + pad + (avail - bw * scaleX) / 2, pad + (avail - bh * scaleY) / 2);
+      ctx.scale(scaleX, scaleY);
+      ctx.globalAlpha = 0.16;
+      ctx.fillStyle = '#1F1B18';
+      ctx.font = '100px "' + guideFont + '"';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(data.char, left, asc);
+      ctx.restore();
+    }
+
+    function drawAtTime(elapsed){
+      const {w, h} = computeCanvasSize();
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, w, h);
+      if(words.length === 0) return;
+
+      words.forEach((data, ci) => {
+        if(showGrid) drawGrid(ci);
+        if(guideVisible){
+          if(guideStyle === 'trace') drawTracedGuide(ci);
+          else drawGuideGlyph(ci);
+        }
+
+        const tf = layoutTransform(ci);
+        const lastStroke = data.strokes[data.strokes.length - 1];
+        const charDone = elapsed >= lastStroke.end;
+        const baseW = Math.max(1, tileSize * (strokeWidthPct / 100));
+
+        data.strokes.forEach((s, si) => {
+          let progress;
+          if(elapsed >= s.end) progress = 1;
+          else if(elapsed <= s.start) progress = 0;
+          else progress = (elapsed - s.start) / strokeDurationMs;
+          if(progress <= 0) return;
+
+          const pts = s.points;
+          if(pts.length < 2) return;
+          const upto = Math.max(1, Math.round((pts.length - 1) * progress));
+          const color = charDone ? strokeColor : STROKE_COLORS[si % STROKE_COLORS.length];
+
+          ctx.beginPath();
+          ctx.lineWidth = baseW;
+          ctx.strokeStyle = color;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          const [x0, y0] = tf(pts[0][0], pts[0][1]);
+          ctx.moveTo(x0, y0);
+          for(let i = 1; i <= upto; i++){
+            const [x, y] = tf(pts[i][0], pts[i][1]);
+            ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        });
       });
     }
 
-    function jumpToStroke(index) {
-      stopPlay();
-      allPaths.forEach(({el, length}) => { el.style.transition = 'none'; el.style.strokeDashoffset = length; });
-      for (let i = 0; i < index; i++) { allPaths[i].el.style.strokeDashoffset = '0'; setPastColor(i); }
-      currentStep = index - 1;
-      drawStroke(index, 0);
-      void allPaths[index].el.getBoundingClientRect();
-      allPaths[index].el.style.strokeDashoffset = '0';
-      currentStep = index;
-      updateUI();
+    function updateStatus(elapsed){
+      if(words.length === 0){ statusEl.textContent = ''; return; }
+      let active = null;
+      for(const data of words){
+        for(let si = 0; si < data.strokes.length; si++){
+          const s = data.strokes[si];
+          if(elapsed >= s.start && elapsed < s.end){
+            active = {char: data.char, stroke: si + 1, total: data.strokes.length};
+          }
+        }
+      }
+      if(active){
+        statusEl.textContent = `${active.char} — stroke ${active.stroke} of ${active.total}`;
+      } else if(!playing){
+        const totalStrokes = words.reduce((a, d) => a + d.strokes.length, 0);
+        statusEl.textContent = `${words.map(w => w.char).join('')} — ${totalStrokes} strokes total`;
+      }
     }
 
-    function populateVariants(hex) {
-      const suffixes = ['', '-Kaisho', '-HzFst', '-VtLst', '-MidFst', '-Insatsu'];
-      const sel = document.getElementById('k-variant-select');
-      sel.innerHTML = '';
-      suffixes.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = hex + s + '.svg';
-        opt.textContent = hex + s + '.svg';
-        if (s === '') opt.selected = true;
-        sel.appendChild(opt);
-      });
-      document.getElementById('k-variant-wrap').style.display = 'flex';
+    function animate(ts){
+      if(!animStart) animStart = ts;
+      const elapsed = ts - animStart;
+      const clamped = Math.min(elapsed, totalDuration);
+      drawAtTime(clamped);
+      updateStatus(clamped);
+
+      if(elapsed < totalDuration){
+        rafId = requestAnimationFrame(animate);
+      } else {
+        playing = false;
+        playBtn.textContent = '▶ Play';
+        if(isRecording){
+          stopRecording();
+        } else if(loop){
+          startPlayback();
+        }
+      }
     }
 
-    function openInNewTab() { if (currentFile) window.open(KANJIVG_BASE + currentFile, '_blank'); }
-
-    function showError(msg) {
-      const el = document.getElementById('k-error');
-      el.innerHTML = '✗ ' + msg;
-      el.style.display = 'block';
+    function startPlayback(){
+      cancelAnimationFrame(rafId);
+      animStart = 0;
+      playing = true;
+      playBtn.textContent = '↻ Restart';
+      rafId = requestAnimationFrame(animate);
     }
 
-    function hideError() {
-      document.getElementById('k-error').style.display = 'none';
+    function stopRecording(){
+      if(recorder && recorder.state !== 'inactive') recorder.stop();
     }
+
+    function recordClip(){
+      if(words.length === 0 || isRecording) return;
+      if(typeof MediaRecorder === 'undefined'){
+        showError('This browser does not support recording. Try Chrome or Edge.');
+        return;
+      }
+      recordedChunks = [];
+      const stream = canvas.captureStream(60);
+      let mime = 'video/webm;codecs=vp9';
+      if(!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm;codecs=vp8';
+      if(!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
+      try{
+        recorder = new MediaRecorder(stream, {mimeType: mime, videoBitsPerSecond: 8_000_000});
+      } catch(e){
+        showError('Recording failed to start in this browser.');
+        return;
+      }
+      recorder.ondataavailable = e => { if(e.data && e.data.size > 0) recordedChunks.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(recordedChunks, {type: 'video/webm'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${words.map(w => w.char).join('')}-stroke-order.webm`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+        isRecording = false;
+        recordBtn.classList.remove('active');
+        recordBtn.textContent = '● Record clip';
+        recordBtn.disabled = false;
+        playBtn.disabled = false;
+      };
+      isRecording = true;
+      recordBtn.classList.add('active');
+      recordBtn.textContent = '■ Recording…';
+      recordBtn.disabled = true;
+      playBtn.disabled = true;
+      recorder.start();
+      startPlayback();
+    }
+
+    function showError(msg){
+      errorEl.textContent = msg || '';
+    }
+
+    function setLoading(isLoading){
+      loadBtn.disabled = isLoading;
+      loadBtn.textContent = isLoading ? 'Loading…' : 'Load';
+    }
+
+    async function loadWord(){
+      const raw = charInput.value.trim();
+      const chars = Array.from(raw).filter(c => !/\s/.test(c));
+      if(chars.length === 0){ showError('Type at least one character.'); return; }
+      if(chars.length > 8){ showError('Keep it to 8 characters or fewer per clip.'); return; }
+
+      cancelAnimationFrame(rafId);
+      playing = false;
+      playBtn.textContent = '▶ Play';
+      setLoading(true);
+      showError('');
+
+      const loaded = await Promise.all(chars.map(c =>
+        fetchCharData(c).catch(err => ({error: err.message, char: c}))
+      ));
+      const ok = loaded.filter(d => !d.error);
+      const failed = loaded.filter(d => d.error);
+
+      if(ok.length === 0){
+        showError(failed[0] ? failed[0].error : 'No stroke data found.');
+        setLoading(false);
+        return;
+      }
+
+      words = ok;
+      if(failed.length){
+        showError(`Skipped (no stroke data found): ${failed.map(f => f.char).join(' ')}`);
+      }
+
+      resizeCanvas();
+      if(timingMode === 'total') applyTotalTiming();
+      totalDuration = buildTimeline();
+      drawAtTime(0);
+      updateStatus(0);
+      playBtn.disabled = false;
+      recordBtn.disabled = false;
+      setLoading(false);
+    }
+
+    loadBtn.addEventListener('click', loadWord);
+    charInput.addEventListener('keydown', e => { if(e.key === 'Enter') loadWord(); });
+
+    playBtn.addEventListener('click', startPlayback);
+    recordBtn.addEventListener('click', recordClip);
+
+    modePer.addEventListener('change', () => {
+      if(!modePer.checked) return;
+      timingMode = 'per';
+      perStrokeField.style.display = 'block';
+      totalTimeField.style.display = 'none';
+      strokeDurationMs = Number(speedRange.value);
+      updateTimingFromMode();
+    });
+    modeTotal.addEventListener('change', () => {
+      if(!modeTotal.checked) return;
+      timingMode = 'total';
+      perStrokeField.style.display = 'none';
+      totalTimeField.style.display = 'block';
+      updateTimingFromMode();
+    });
+    speedRange.addEventListener('input', () => {
+      strokeDurationMs = Number(speedRange.value);
+      speedVal.textContent = `${strokeDurationMs} ms/stroke`;
+      if(words.length){
+        totalDuration = buildTimeline();
+        if(!playing) drawAtTime(0);
+      }
+    });
+    totalTimeRange.addEventListener('input', () => {
+      totalTimeSeconds = Number(totalTimeRange.value);
+      totalTimeVal.textContent = `${totalTimeSeconds.toFixed(1)} s total`;
+      updateTimingFromMode();
+    });
+    pauseRange.addEventListener('input', () => {
+      pauseMs = Number(pauseRange.value);
+      pauseVal.textContent = `${pauseMs} ms`;
+      updateTimingFromMode();
+    });
+    sizeRange.addEventListener('input', () => {
+      tileSize = Number(sizeRange.value);
+      sizeVal.textContent = `${tileSize} px per tile`;
+      if(words.length){
+        resizeCanvas();
+        if(!playing) drawAtTime(0);
+      }
+    });
+    strokeColorInput.addEventListener('input', () => {
+      strokeColor = strokeColorInput.value;
+      if(words.length && !playing) drawAtTime(totalDuration);
+    });
+    bgSelect.addEventListener('change', () => {
+      bgColor = bgSelect.value;
+      if(words.length && !playing) drawAtTime(0);
+    });
+    thicknessRange.addEventListener('input', () => {
+      strokeWidthPct = Number(thicknessRange.value);
+      thicknessVal.textContent = `${strokeWidthPct.toFixed(1)}%`;
+      if(words.length && !playing) drawAtTime(0);
+    });
+    gridCheck.addEventListener('change', () => {
+      showGrid = gridCheck.checked;
+      if(words.length && !playing) drawAtTime(0);
+    });
+    guideCheck.addEventListener('change', () => {
+      guideVisible = guideCheck.checked;
+      if(words.length && !playing) drawAtTime(0);
+    });
+    guideStyleSelect.addEventListener('change', () => {
+      guideStyle = guideStyleSelect.value;
+      guideFontField.style.display = guideStyle === 'font' ? 'block' : 'none';
+      if(words.length && !playing) drawAtTime(0);
+    });
+    fontSelect.addEventListener('change', () => {
+      guideFont = fontSelect.value;
+      const apply = () => { if(words.length && !playing) drawAtTime(0); };
+      if(guideFont && document.fonts && document.fonts.load){
+        document.fonts.load(`16px "${guideFont}"`).then(apply).catch(apply);
+      } else {
+        apply();
+      }
+    });
+    loopCheck.addEventListener('change', () => { loop = loopCheck.checked; });
+
+    if(document.fonts && document.fonts.ready){
+      document.fonts.ready.then(() => { if(words.length && !playing) drawAtTime(0); });
+    }
+
+    loadWord();
+  })();
   </script>
 </body>
 </html>
