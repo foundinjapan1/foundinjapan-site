@@ -261,22 +261,6 @@
 
     .k-attribution a:hover { color: var(--k-ink); }
 
-    .k-setup-note {
-      background: var(--k-paper2);
-      border: 1px solid var(--k-border);
-      border-left: 3px solid var(--k-accent);
-      padding: 1rem 1.25rem;
-      margin-bottom: 1.5rem;
-      font-family: 'DM Mono', monospace;
-      font-size: 0.75rem;
-      color: var(--k-muted);
-      line-height: 1.8;
-      display: none;
-    }
-
-    .k-setup-note strong { color: var(--k-ink); }
-    .k-setup-note a { color: var(--k-accent); }
-
     .hidden { display: none !important; }
 
     @media (max-width: 680px) {
@@ -323,17 +307,8 @@
 
   <div class="kanji-wrap-outer">
 
-    <!-- Setup note shown if kanji/ folder is missing -->
-    <div class="k-setup-note" id="k-setup-note">
-      <strong>Setup required</strong>
-      The KanjiVG data files are not yet installed. Download the SVG files from
-      <a href="https://github.com/KanjiVG/kanjivg/releases" target="_blank">github.com/KanjiVG/kanjivg/releases</a>
-      and place the extracted <code>kanji/</code> folder alongside this page on the server.
-      See the README for full instructions.
-    </div>
-
     <div class="k-search-row">
-      <input type="text" id="k-search" placeholder="Enter kanji 馬  or hex  9f8a" maxlength="10"
+      <input type="text" id="k-search" placeholder="Enter kanji 馬 or hex 9f8a" maxlength="10"
              onkeydown="if(event.key==='Enter') loadKanji()">
       <button onclick="loadKanji()">Load →</button>
     </div>
@@ -420,6 +395,9 @@
 
   <script src="main.js"></script>
   <script>
+    // ─── Base URL for Raw KanjiVG SVGs ─────────────────────────────────────────
+    const KANJIVG_BASE = 'https://raw.githubusercontent.com/KanjiVG/kanjivg/master/kanji/';
+
     // ─── State ───────────────────────────────────────────────────────────────
     let allPaths    = [];
     let currentStep = -1;
@@ -468,18 +446,12 @@
       hideError();
       stopPlay();
       try {
-        const resp = await fetch('kanji/' + filename);
-        if (!resp.ok) throw new Error('Kanji not found: ' + filename);
+        const resp = await fetch(KANJIVG_BASE + filename);
+        if (!resp.ok) throw new Error('Kanji stroke data not found: ' + filename);
         const svgText = await resp.text();
         buildAnimatedSVG(svgText, filename);
       } catch(e) {
-        // Check if it's a network/CORS error vs not found
-        if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
-          showError('Could not load kanji data. Make sure the kanji/ folder has been uploaded to the server.');
-          document.getElementById('k-setup-note').style.display = 'block';
-        } else {
-          showError(e.message);
-        }
+        showError('Could not fetch stroke data from KanjiVG. Check character input or internet connection.');
       }
     }
 
@@ -744,7 +716,7 @@
       document.getElementById('k-variant-wrap').style.display = 'flex';
     }
 
-    function openInNewTab() { if (currentFile) window.open('kanji/' + currentFile, '_blank'); }
+    function openInNewTab() { if (currentFile) window.open(KANJIVG_BASE + currentFile, '_blank'); }
 
     function showError(msg) {
       const el = document.getElementById('k-error');
